@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+#Project specific
+node_modules/
+.env
+server/gym.db
+server/service-account.json
+*.db
