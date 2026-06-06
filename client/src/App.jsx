@@ -9,6 +9,9 @@ import ExerciseDetail from "./pages/ExerciseDetail";
 import Progress from "./pages/Progress";
 import Body from "./pages/Body";
 import Login from "./pages/Login";
+import NewSession from "./pages/NewSession";
+import LogSession from "./pages/LogSession";
+
 import styles from "./App.module.scss";
 
 function App() {
@@ -30,6 +33,8 @@ function App() {
                     <Route path="/exercises/:id" element={<ExerciseDetail />} />
                     <Route path="/progress" element={<Progress />} />
                     <Route path="/body" element={<Body />} />
+                    <Route path="/sessions/new" element={<NewSession />} />
+                    <Route path="/sessions/:id/log" element={<LogSession />} />
                   </Routes>
                 </main>
               </ProtectedRoute>

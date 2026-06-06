@@ -11,3 +11,13 @@ export async function getSession(id) {
   if (!res.ok) throw new Error("Failed to fetch session");
   return res.json();
 }
+
+export async function createSession(session) {
+  const res = await fetch(`${BASE}/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(session),
+  });
+  if (!res.ok) throw new Error("Failed to create session");
+  return res.json();
+}

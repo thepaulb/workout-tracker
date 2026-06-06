@@ -24,6 +24,12 @@ export default function SessionsList() {
       <header className={styles.header}>
         <h1>Sessions</h1>
         <span className={styles.count}>{sessions.length} total</span>
+        <button
+          className={styles.newSession}
+          onClick={() => navigate("/sessions/new")}
+        >
+          + New
+        </button>
       </header>
 
       <ul className={styles.list}>

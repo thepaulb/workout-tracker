@@ -133,4 +133,22 @@ router.delete("/:id", requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// GET last set for an exercise (for context when logging)
+router.get("/last/:exerciseId", (req, res) => {
+  const row = db
+    .prepare(
+      `
+    SELECT st.*, s.date
+    FROM sets st
+    JOIN sessions s ON s.id = st.session_id
+    WHERE st.exercise_id = ?
+    ORDER BY s.date DESC, st.set_number DESC
+    LIMIT 1
+  `,
+    )
+    .get(req.params.exerciseId);
+
+  res.json(row ?? null);
+});
+
 module.exports = router;

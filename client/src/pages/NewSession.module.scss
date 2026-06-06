@@ -1,0 +1,111 @@
+@use "../styles/main" as *;
+
+.page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.back {
+  color: $color-muted;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  display: block;
+  transition: color 0.15s;
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.header {
+  margin-bottom: 2rem;
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+}
+
+.error {
+  background: rgba(249, 112, 88, 0.1);
+  border: 1px solid rgba(249, 112, 88, 0.3);
+  border-radius: $radius;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: $color-coral;
+  margin-bottom: 1.25rem;
+}
+
+.form {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.75rem;
+    color: $color-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    span {
+      text-transform: none;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+  }
+
+  input,
+  select,
+  textarea {
+    background: $color-bg;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    padding: 0.65rem 0.875rem;
+    color: $color-text;
+    font: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.15s;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+    }
+
+    option {
+      background: $color-surface;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.submit {
+  background: $color-primary;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  border-radius: $radius;
+  transition: opacity 0.15s;
+  margin-top: 0.5rem;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    opacity: 0.85;
+  }
+}

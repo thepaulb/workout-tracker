@@ -80,3 +80,17 @@
   text-align: center;
   color: $color-muted;
 }
+
+.newSession {
+  margin-left: auto;
+  background: $color-primary;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: $radius;
+  transition: opacity 0.15s;
+  &:hover {
+    opacity: 0.85;
+  }
+}
