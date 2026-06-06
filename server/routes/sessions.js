@@ -73,6 +73,29 @@ router.post("/", (req, res) => {
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
+// GET volume per week
+router.get("/stats/volume", (req, res) => {
+  const rows = db
+    .prepare(
+      `
+    SELECT
+      strftime('%Y-W%W', s.date)  AS week,
+      MIN(s.date)                  AS week_start,
+      SUM(st.reps * st.weight_kg)  AS volume_kg,
+      COUNT(DISTINCT s.id)         AS sessions,
+      COUNT(st.id)                 AS total_sets
+    FROM sessions s
+    JOIN sets st ON st.session_id = s.id
+    WHERE st.weight_kg IS NOT NULL
+      AND st.reps IS NOT NULL
+    GROUP BY week
+    ORDER BY week ASC
+  `,
+    )
+    .all();
+  res.json(rows);
+});
+
 // PATCH update session
 router.patch("/:id", (req, res) => {
   const { date, programme_id, notes } = req.body;

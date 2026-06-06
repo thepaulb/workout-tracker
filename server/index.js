@@ -16,6 +16,7 @@ app.use(express.json());
 app.use("/api/sessions", require("./routes/sessions"));
 app.use("/api/exercises", require("./routes/exercises"));
 app.use("/api/sets", require("./routes/sets"));
+app.use("/api/progress", require("./routes/progress"));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
