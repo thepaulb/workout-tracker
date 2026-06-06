@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getExercises } from "../api/exercises";
+
 import styles from "./ExercisesList.module.scss";
 
 export default function ExercisesList() {

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExercise } from "../api/exercises";
+import WeightChart from "../components/WeightChart";
+
 import styles from "./ExerciseDetail.module.scss";
 
 export default function ExerciseDetail() {
@@ -58,6 +60,8 @@ export default function ExerciseDetail() {
           <span className={styles.statLabel}>Best Reps</span>
         </div>
       </div>
+
+      <WeightChart history={exercise.history} />
 
       <ul className={styles.history}>
         {grouped.map(({ date, session_id, sets }) => (
