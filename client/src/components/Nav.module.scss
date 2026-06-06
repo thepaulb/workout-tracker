@@ -1,0 +1,43 @@
+@use "../styles/main" as *;
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 60px;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: $font-mono;
+  font-weight: 700;
+  font-size: 1rem;
+  color: $color-primary;
+  letter-spacing: 0.2em;
+}
+
+.links {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+
+  a {
+    font-size: 0.9rem;
+    color: $color-muted;
+    transition: color 0.15s;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
+}
+
+.active {
+  color: $color-text !important;
+  font-weight: 500;
+}
