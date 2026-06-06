@@ -1,7 +1,10 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import styles from "./Nav.module.scss";
 
 export default function Nav() {
+  const { logout } = useAuth();
+
   return (
     <nav className={styles.nav}>
       <div className={styles.logo}>GYM</div>
@@ -39,6 +42,9 @@ export default function Nav() {
           </NavLink>
         </li>
       </ul>
+      <button className={styles.logout} onClick={logout}>
+        Sign out
+      </button>
     </nav>
   );
 }

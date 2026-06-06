@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const requireAuth = require("../middleware/auth");
 
 // GET all entries
 router.get("/", (req, res) => {
@@ -15,7 +16,7 @@ router.get("/", (req, res) => {
 });
 
 // POST new entry
-router.post("/", (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const { date, bodyweight_kg, body_fat_pct } = req.body;
 
   if (!date || !bodyweight_kg) {
@@ -50,7 +51,7 @@ router.post("/", (req, res) => {
 });
 
 // DELETE entry
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAuth, (req, res) => {
   const row = db
     .prepare("SELECT id FROM body_composition WHERE id = ?")
     .get(req.params.id);

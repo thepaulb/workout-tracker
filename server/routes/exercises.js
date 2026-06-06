@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const requireAuth = require("../middleware/auth");
 
 // GET all exercises
 router.get("/", (req, res) => {
@@ -37,7 +38,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST new exercise
-router.post("/", (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const { name, category, equipment, notes } = req.body;
   if (!name || !category || !equipment) {
     return res
@@ -57,7 +58,7 @@ router.post("/", (req, res) => {
 });
 
 // PATCH update exercise
-router.patch("/:id", (req, res) => {
+router.patch("/:id", requireAuth, (req, res) => {
   const exercise = db
     .prepare("SELECT id FROM exercises WHERE id = ?")
     .get(req.params.id);

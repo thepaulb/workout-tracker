@@ -41,3 +41,13 @@
   color: $color-text !important;
   font-weight: 500;
 }
+
+.logout {
+  font-size: 0.8rem;
+  color: $color-muted;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $color-text;
+  }
+}

@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+const requireAuth = require("../middleware/auth");
+
 // GET all sessions with programme name and set count
 router.get("/", (req, res) => {
   const sessions = db
@@ -57,7 +59,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST new session
-router.post("/", (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const { date, programme_id, notes } = req.body;
 
   if (!date) return res.status(400).json({ error: "date is required" });
@@ -97,7 +99,7 @@ router.get("/stats/volume", (req, res) => {
 });
 
 // PATCH update session
-router.patch("/:id", (req, res) => {
+router.patch("/:id", requireAuth, (req, res) => {
   const { date, programme_id, notes } = req.body;
 
   const session = db
@@ -119,7 +121,7 @@ router.patch("/:id", (req, res) => {
 });
 
 // DELETE session (cascades to sets)
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAuth, (req, res) => {
   const session = db
     .prepare("SELECT id FROM sessions WHERE id = ?")
     .get(req.params.id);

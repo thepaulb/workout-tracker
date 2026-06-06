@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const requireAuth = require("../middleware/auth");
 
 // GET all sets for a session (usually accessed via /api/sessions/:id but useful standalone)
 router.get("/session/:sessionId", (req, res) => {
@@ -20,7 +21,7 @@ router.get("/session/:sessionId", (req, res) => {
 });
 
 // POST new set
-router.post("/", (req, res) => {
+router.post("/", requireAuth, (req, res) => {
   const {
     session_id,
     exercise_id,
@@ -74,7 +75,7 @@ router.post("/", (req, res) => {
 });
 
 // PATCH update set
-router.patch("/:id", (req, res) => {
+router.patch("/:id", requireAuth, (req, res) => {
   const set = db.prepare("SELECT id FROM sets WHERE id = ?").get(req.params.id);
   if (!set) return res.status(404).json({ error: "Set not found" });
 
@@ -124,7 +125,7 @@ router.patch("/:id", (req, res) => {
 });
 
 // DELETE set
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAuth, (req, res) => {
   const set = db.prepare("SELECT id FROM sets WHERE id = ?").get(req.params.id);
   if (!set) return res.status(404).json({ error: "Set not found" });
 
