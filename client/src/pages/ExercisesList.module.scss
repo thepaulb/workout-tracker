@@ -1,0 +1,76 @@
+@use "../styles/main" as *;
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+}
+
+.count {
+  color: $color-muted;
+  font-size: 0.9rem;
+}
+
+.group {
+  margin-bottom: 2rem;
+}
+
+.category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $color-primary;
+  margin-bottom: 0.75rem;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+}
+
+.name {
+  font-weight: 500;
+}
+
+.equipment {
+  font-size: 0.8rem;
+  color: $color-muted;
+  font-family: $font-mono;
+}
+
+.state {
+  padding: 2rem;
+  text-align: center;
+  color: $color-muted;
+}
