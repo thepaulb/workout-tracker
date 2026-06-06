@@ -1,0 +1,192 @@
+@use "../styles/main" as *;
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+}
+
+.latest {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.latestValue {
+  font-family: $font-mono;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-purple;
+}
+
+.latestFat {
+  font-family: $font-mono;
+  font-size: 1rem;
+  color: $color-coral;
+}
+
+.latestDate {
+  font-size: 0.8rem;
+  color: $color-muted;
+}
+
+.form {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.formTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $color-muted;
+  margin-bottom: 1.25rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.75rem;
+    color: $color-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    span {
+      text-transform: none;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+  }
+
+  input {
+    background: $color-bg;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    padding: 0.6rem 0.875rem;
+    color: $color-text;
+    font: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.15s;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+    }
+
+    &::placeholder {
+      color: $color-muted;
+    }
+  }
+}
+
+.submit {
+  background: $color-primary;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: $radius;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    opacity: 0.85;
+  }
+}
+
+.history {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.date {
+  font-size: 0.85rem;
+  color: $color-muted;
+  font-family: $font-mono;
+}
+
+.weight {
+  font-family: $font-mono;
+  font-weight: 600;
+  color: $color-purple;
+}
+
+.fat {
+  font-family: $font-mono;
+  font-size: 0.85rem;
+  color: $color-coral;
+  min-width: 3rem;
+  text-align: right;
+}
+
+.delete {
+  color: $color-muted;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $color-coral;
+  }
+}
+
+.state {
+  padding: 2rem;
+  text-align: center;
+  color: $color-muted;
+}
