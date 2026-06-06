@@ -1,0 +1,56 @@
+@use "../styles/main" as *;
+
+.wrapper {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $color-muted;
+}
+
+.unit {
+  font-size: 0.7rem;
+  color: $color-muted;
+  font-family: $font-mono;
+}
+
+.tooltip {
+  background: #1e2023;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  padding: 0.75rem 1rem;
+  font-family: $font-mono;
+}
+
+.tooltipDate {
+  font-size: 0.7rem;
+  color: $color-muted;
+  margin-bottom: 0.25rem;
+}
+
+.tooltipVolume {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $color-amber;
+  margin-bottom: 0.15rem;
+}
+
+.tooltipMeta {
+  font-size: 0.7rem;
+  color: $color-muted;
+}
