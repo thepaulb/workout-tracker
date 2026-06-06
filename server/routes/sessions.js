@@ -43,12 +43,13 @@ router.get("/:id", (req, res) => {
   session.sets = db
     .prepare(
       `
-    SELECT st.*, e.name AS exercise_name, e.category, e.equipment
-    FROM sets st
-    JOIN exercises e ON e.id = st.exercise_id
-    WHERE st.session_id = ?
-    ORDER BY st.set_number
-  `,
+        SELECT st.*, e.name AS exercise_name, e.category, e.equipment,
+        MIN(st.id) OVER (PARTITION BY st.exercise_id) AS exercise_first_id
+        FROM sets st
+        JOIN exercises e ON e.id = st.exercise_id
+        WHERE st.session_id = ?
+        ORDER BY exercise_first_id, st.set_number
+      `,
     )
     .all(req.params.id);
 

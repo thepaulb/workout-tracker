@@ -1,0 +1,82 @@
+@use "../styles/main" as *;
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+}
+
+.count {
+  color: $color-muted;
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  padding: 1rem 1.25rem;
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: $color-primary;
+    cursor: pointer;
+  }
+}
+
+.date {
+  font-size: 0.85rem;
+  color: $color-muted;
+  font-family: $font-mono;
+}
+
+.programme {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: $color-muted;
+}
+
+.notes {
+  font-style: italic;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state {
+  padding: 2rem;
+  text-align: center;
+  color: $color-muted;
+}
