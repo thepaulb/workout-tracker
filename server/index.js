@@ -1,3 +1,5 @@
+// Node prefers CommonJS syntax, so we
+// use require() instead of import
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -10,10 +12,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000" }));
 app.use(express.json());
 
-// Routes (we'll add these next)
-// app.use('/api/sessions',  require('./routes/sessions'));
-// app.use('/api/exercises', require('./routes/exercises'));
-// app.use('/api/sets',      require('./routes/sets'));
+// Routes are defined in separate files for better organisation;
+app.use("/api/sessions", require("./routes/sessions"));
+app.use("/api/exercises", require("./routes/exercises"));
+app.use("/api/sets", require("./routes/sets"));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
