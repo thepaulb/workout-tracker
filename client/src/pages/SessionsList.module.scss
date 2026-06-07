@@ -27,7 +27,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .card {
@@ -45,32 +45,50 @@
     border-color: $color-primary;
     cursor: pointer;
   }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.25rem 0.5rem;
+    padding: 0.75rem 1rem;
+  }
 }
 
 .date {
   font-size: 0.85rem;
   color: $color-muted;
   font-family: $font-mono;
+
+  @media (max-width: 600px) {
+    font-size: 0.75rem;
+  }
 }
 
 .programme {
   font-weight: 500;
   font-size: 0.95rem;
+
+  @media (max-width: 600px) {
+    grid-column: 1;
+    font-size: 0.9rem;
+  }
 }
 
 .meta {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   gap: 0.25rem;
   font-size: 0.8rem;
   color: $color-muted;
+
+  @media (max-width: 600px) {
+    grid-column: 1;
+    justify-content: center;
+  }
 }
 
 .notes {
   font-style: italic;
-  max-width: 200px;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }

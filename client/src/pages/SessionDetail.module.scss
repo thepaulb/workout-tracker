@@ -1,4 +1,4 @@
-@use '../styles/main' as *;
+@use "../styles/main" as *;
 
 .page {
   max-width: 800px;
@@ -13,7 +13,9 @@
   display: block;
   transition: color 0.15s;
 
-  &:hover { color: $color-text; }
+  &:hover {
+    color: $color-text;
+  }
 }
 
 .header {
@@ -87,4 +89,10 @@
   padding: 2rem;
   text-align: center;
   color: $color-muted;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 1rem 0.75rem;
+  }
 }

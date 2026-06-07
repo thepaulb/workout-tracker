@@ -20,3 +20,9 @@
   text-align: center;
   color: $color-muted;
 }
+
+@media (max-width: 600px) {
+  .page {
+    padding: 1rem 0.75rem;
+  }
+}

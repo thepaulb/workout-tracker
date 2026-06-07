@@ -42,3 +42,9 @@
   font-size: 0.8rem;
   color: $color-coral;
 }
+
+@media (max-width: 600px) {
+  .wrapper {
+    padding: 1rem 0.5rem;
+  }
+}

@@ -54,3 +54,9 @@
   font-size: 0.7rem;
   color: $color-muted;
 }
+
+@media (max-width: 600px) {
+  .wrapper {
+    padding: 1rem 0.5rem;
+  }
+}

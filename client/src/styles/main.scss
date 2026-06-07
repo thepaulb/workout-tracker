@@ -48,3 +48,9 @@ $color-green: #3ecf8e;
 $color-coral: #f97058;
 $color-amber: #f5a623;
 $color-purple: #a78bfa;
+
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+}

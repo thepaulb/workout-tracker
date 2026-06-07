@@ -48,6 +48,11 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
 }
 
 .stat {
@@ -145,4 +150,10 @@
   padding: 2rem;
   text-align: center;
   color: $color-muted;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 1rem 0.75rem;
+  }
 }
