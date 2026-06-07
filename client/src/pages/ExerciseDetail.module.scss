@@ -4,6 +4,9 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  @media (max-width: 600px) {
+    padding: 1rem 0.75rem;
+  }
 }
 
 .back {
@@ -150,10 +153,4 @@
   padding: 2rem;
   text-align: center;
   color: $color-muted;
-}
-
-@media (max-width: 600px) {
-  .page {
-    padding: 1rem 0.75rem;
-  }
 }
