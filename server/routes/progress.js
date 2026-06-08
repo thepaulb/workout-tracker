@@ -28,4 +28,28 @@ router.get("/bests", (req, res) => {
   res.json(rows);
 });
 
+// GET PR lookup map — { exerciseId: { best_weight, best_reps } }
+router.get("/prs", (req, res) => {
+  const rows = db
+    .prepare(
+      `
+    SELECT
+      e.id,
+      MAX(st.weight_kg) AS best_weight,
+      MAX(st.reps)      AS best_reps
+    FROM exercises e
+    JOIN sets st ON st.exercise_id = e.id
+    GROUP BY e.id
+  `,
+    )
+    .all();
+
+  const map = {};
+  for (const row of rows) {
+    map[row.id] = { best_weight: row.best_weight, best_reps: row.best_reps };
+  }
+
+  res.json(map);
+});
+
 module.exports = router;

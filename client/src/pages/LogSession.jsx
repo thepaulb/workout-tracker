@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
 import { getExercises } from "../api/exercises";
 import { createSet, deleteSet, getLastSet } from "../api/sets";
+import { getPRs } from "../api/progress";
+
 import styles from "./LogSession.module.scss";
 
 export default function LogSession() {
@@ -23,11 +25,14 @@ export default function LogSession() {
     notes: "",
   });
 
+  const [prs, setPRs] = useState({});
+
   useEffect(() => {
-    Promise.all([getSession(id), getExercises()])
-      .then(([s, e]) => {
+    Promise.all([getSession(id), getExercises(), getPRs()])
+      .then(([s, e, p]) => {
         setSession(s);
         setExercises(e);
+        setPRs(p);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -44,6 +49,14 @@ export default function LogSession() {
     });
     setView("log");
   }
+
+  const currentPR = selectedExercise ? prs[selectedExercise.id] : null;
+  const isWeightPR =
+    currentPR &&
+    form.weight_kg &&
+    parseFloat(form.weight_kg) >= currentPR.best_weight;
+  const isRepsPR =
+    currentPR && form.reps && parseInt(form.reps) >= currentPR.best_reps;
 
   async function handleLogSet() {
     if (!form.reps) return;
@@ -259,13 +272,24 @@ export default function LogSession() {
               </div>
             </div>
 
+            {(isWeightPR || isRepsPR) && (
+              <div className={styles.prAlert}>
+                🏆 New PR! {isWeightPR && `Weight: ${form.weight_kg}kg`}{" "}
+                {isRepsPR && `Reps: ${form.reps}`}
+              </div>
+            )}
+
             <div className={styles.logActions}>
               <button
-                className={styles.logSet}
+                className={`${styles.logSet} ${isWeightPR || isRepsPR ? styles.logSetPR : ""}`}
                 onClick={handleLogSet}
                 disabled={saving || !form.reps}
               >
-                {saving ? "Logging..." : "Log Set"}
+                {saving
+                  ? "Logging..."
+                  : isWeightPR || isRepsPR
+                    ? "🏆 Log PR"
+                    : "Log Set"}
               </button>
               <button
                 className={styles.doneExercise}

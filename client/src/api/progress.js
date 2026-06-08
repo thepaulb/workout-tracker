@@ -11,3 +11,9 @@ export async function getVolume() {
   if (!res.ok) throw new Error("Failed to fetch volume");
   return res.json();
 }
+
+export async function getPRs() {
+  const res = await fetch(`${BASE}/progress/prs`);
+  if (!res.ok) throw new Error("Failed to fetch PRs");
+  return res.json();
+}

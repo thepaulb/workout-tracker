@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
+import { getPRs } from "../api/progress";
+import PRBadge from "../components/PRBadge";
 import styles from "./SessionDetail.module.scss";
 
 export default function SessionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
+  const [prs, setPRs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getSession(id)
-      .then(setSession)
+    Promise.all([getSession(id), getPRs()])
+      .then(([s, p]) => {
+        setSession(s);
+        setPRs(p);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -35,16 +41,30 @@ export default function SessionDetail() {
       </header>
 
       <ul className={styles.sets}>
-        {session.sets.map((set) => (
-          <li key={set.id} className={styles.set}>
-            <span className={styles.setNum}>#{set.set_number}</span>
-            <span className={styles.exercise}>{set.exercise_name}</span>
-            <span className={styles.detail}>{formatSet(set)}</span>
-            {set.is_ladder ? (
-              <span className={styles.ladder}>Ladder {set.ladder_step}</span>
-            ) : null}
-          </li>
-        ))}
+        {session.sets.map((set) => {
+          const pr = prs[set.exercise_id];
+          const isWeightPR =
+            pr && set.weight_kg && set.weight_kg >= pr.best_weight;
+          const isRepsPR = pr && set.reps && set.reps >= pr.best_reps;
+
+          return (
+            <li
+              key={set.id}
+              className={`${styles.set} ${isWeightPR || isRepsPR ? styles.prSet : ""}`}
+            >
+              <span className={styles.setNum}>#{set.set_number}</span>
+              <span className={styles.exercise}>
+                {set.exercise_name}
+                {isWeightPR && <PRBadge type="weight" />}
+                {isRepsPR && <PRBadge type="reps" />}
+              </span>
+              <span className={styles.detail}>{formatSet(set)}</span>
+              {set.is_ladder ? (
+                <span className={styles.ladder}>Ladder {set.ladder_step}</span>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

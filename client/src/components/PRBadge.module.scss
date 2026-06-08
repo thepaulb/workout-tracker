@@ -1,0 +1,25 @@
+@use "../styles/main" as *;
+
+.badge {
+  display: inline-block;
+  font-family: $font-mono;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+}
+
+.weight {
+  background: rgba(74, 158, 255, 0.15);
+  color: $color-blue;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.reps {
+  background: rgba(62, 207, 142, 0.15);
+  color: $color-green;
+  border: 1px solid rgba(62, 207, 142, 0.3);
+}
