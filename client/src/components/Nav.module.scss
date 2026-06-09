@@ -1,6 +1,7 @@
 @use "../styles/main" as *;
 
-.nav {
+// ── Desktop top nav ──────────────────────────────────────────
+.topNav {
   display: flex;
   align-items: center;
   padding: 0 1rem;
@@ -11,6 +12,10 @@
   top: 0;
   z-index: 100;
   gap: 0.5rem;
+
+  @media (max-width: 600px) {
+    display: none;
+  }
 }
 
 .logo {
@@ -25,20 +30,14 @@
 .links {
   list-style: none;
   display: flex;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
   flex: 1;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  gap: 0;
 
   a {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: $color-muted;
     transition: color 0.15s;
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0.75rem;
     white-space: nowrap;
     display: block;
 
@@ -54,7 +53,7 @@
 }
 
 .logout {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: $color-muted;
   transition: color 0.15s;
   flex-shrink: 0;
@@ -62,4 +61,58 @@
   &:hover {
     color: $color-text;
   }
+}
+
+// ── Mobile bottom tab bar ────────────────────────────────────
+.bottomNav {
+  display: none;
+
+  @media (max-width: 600px) {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: $color-surface;
+    border-top: 1px solid $color-border;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  color: $color-muted;
+  transition: color 0.15s;
+  padding: 0.5rem 0;
+}
+
+.tabActive {
+  color: $color-primary;
+}
+
+.tabIcon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.tabLabel {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
