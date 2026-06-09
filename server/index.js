@@ -22,6 +22,7 @@ app.use("/api/progress", require("./routes/progress"));
 app.use("/api/body", require("./routes/body"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/programmes", require("./routes/programmes"));
+app.use("/api/goals", require("./routes/goals"));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 

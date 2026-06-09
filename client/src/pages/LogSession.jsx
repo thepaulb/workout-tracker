@@ -4,6 +4,7 @@ import { getSession } from "../api/sessions";
 import { getExercises } from "../api/exercises";
 import { createSet, deleteSet, getLastSet } from "../api/sets";
 import { getPRs } from "../api/progress";
+import { checkGoals } from "../api/goals";
 
 import styles from "./LogSession.module.scss";
 
@@ -76,6 +77,7 @@ export default function LogSession() {
         is_ladder: false,
       });
       const updated = await getSession(id);
+      await checkGoals(selectedExercise.id);
       setSession(updated);
       setForm((f) => ({ ...f, reps: "", notes: "" }));
     } finally {

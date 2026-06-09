@@ -1,0 +1,278 @@
+@use "../styles/main" as *;
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  @media (max-width: 600px) {
+    padding: 1rem 0.75rem;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+}
+
+.newGoal {
+  background: $color-primary;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: $radius;
+  transition: opacity 0.15s;
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.form {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.75rem;
+    color: $color-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    span {
+      text-transform: none;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+  }
+
+  input,
+  select {
+    background: $color-bg;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    padding: 0.65rem 0.875rem;
+    color: $color-text;
+    font: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.15s;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+    }
+
+    option {
+      background: $color-surface;
+    }
+  }
+}
+
+.targetRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.submit {
+  background: $color-primary;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: $radius;
+  transition: opacity 0.15s;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    opacity: 0.85;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: $color-muted;
+  padding: 3rem 1rem;
+  font-size: 0.9rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $color-muted;
+  margin-bottom: 0.75rem;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+}
+
+.completedCard {
+  border-color: rgba(62, 207, 142, 0.3);
+  background: rgba(62, 207, 142, 0.03);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.exerciseName {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.completedBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $color-green;
+  background: rgba(62, 207, 142, 0.1);
+  border: 1px solid rgba(62, 207, 142, 0.3);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-family: $font-mono;
+}
+
+.overdueBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $color-coral;
+  background: rgba(249, 112, 88, 0.1);
+  border: 1px solid rgba(249, 112, 88, 0.3);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-family: $font-mono;
+}
+
+.delete {
+  color: $color-muted;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: color 0.15s;
+  &:hover {
+    color: $color-coral;
+  }
+}
+
+.target {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.currentValue {
+  font-family: $font-mono;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $color-primary;
+}
+
+.separator {
+  color: $color-muted;
+  font-size: 1.25rem;
+}
+
+.targetValue {
+  font-family: $font-mono;
+  font-size: 1.1rem;
+  color: $color-muted;
+}
+
+.progressBar {
+  height: 6px;
+  background: $color-border;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: $color-blue;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressComplete {
+  background: $color-green;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progressPct {
+  font-family: $font-mono;
+  font-size: 0.8rem;
+  color: $color-muted;
+}
+
+.deadline {
+  font-size: 0.8rem;
+  color: $color-muted;
+  font-family: $font-mono;
+}
+
+.deadlineOverdue {
+  color: $color-coral;
+}
+
+.state {
+  padding: 2rem;
+  text-align: center;
+  color: $color-muted;
+}

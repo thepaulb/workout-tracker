@@ -41,6 +41,14 @@ export default function Nav() {
             Body
           </NavLink>
         </li>
+        <li>
+          <NavLink
+            to="/goals"
+            className={({ isActive }) => (isActive ? styles.active : "")}
+          >
+            Goals
+          </NavLink>
+        </li>
       </ul>
       <button className={styles.logout} onClick={logout}>
         Sign out

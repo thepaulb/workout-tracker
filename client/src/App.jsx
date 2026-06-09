@@ -11,6 +11,7 @@ import Body from "./pages/Body";
 import Login from "./pages/Login";
 import NewSession from "./pages/NewSession";
 import LogSession from "./pages/LogSession";
+import Goals from "./pages/Goals";
 
 import styles from "./App.module.scss";
 
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/body" element={<Body />} />
                     <Route path="/sessions/new" element={<NewSession />} />
                     <Route path="/sessions/:id/log" element={<LogSession />} />
+                    <Route path="/goals" element={<Goals />} />
                   </Routes>
                 </main>
               </ProtectedRoute>
