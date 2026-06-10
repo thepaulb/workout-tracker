@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "Gym_Restructured_2026_1.xlsx"
+XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "Gym_Restructured_2026_2.xlsx"
 DB_PATH   = sys.argv[2] if len(sys.argv) > 2 else "gym.db"
 
 SCHEMA = """
@@ -69,6 +69,18 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash   TEXT    NOT NULL,
     created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS goals (
+    id           INTEGER PRIMARY KEY,
+    exercise_id  INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+    target_type  TEXT    NOT NULL CHECK(target_type IN ('weight','reps')),
+    target_value REAL    NOT NULL,
+    deadline     TEXT,
+    completed_at TEXT,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_goals_exercise ON goals(exercise_id);
 """
 
 def fmt_date(val):
@@ -90,6 +102,9 @@ def run():
     exercises_df      = sheets["Exercises"]
     sessions_df       = sheets["Sessions"]
     sets_df           = sheets["Sets"]
+
+    print("First few exercise values from Sets sheet:")
+    print(sets_df["Exercise"].head(10).tolist())
 
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -123,11 +138,18 @@ def run():
 
     # ── exercise name → id lookup ─────────────────────────────
     exercise_map = {row["Name"]: int(row["ID"]) for _, row in exercises_df.iterrows()}
-
+    print("Exercise map keys:", sorted(exercise_map.keys()))
     # ── sets ─────────────────────────────────────────────────
     inserted = 0
     for _, row in sets_df.iterrows():
-        ex_id     = exercise_map[row["Exercise"]]
+
+        ex_name = str(row["Exercise"]).strip() if pd.notna(row["Exercise"]) else "NaN_VALUE"
+        if ex_name not in exercise_map:
+            print(f"NOT IN MAP: {repr(ex_name)}")
+            continue
+
+        ex_id = exercise_map[ex_name]
+
         is_ladder = 1 if pd.notna(row.get("Ladder?")) and str(row["Ladder?"]).strip().lower() == "yes" else 0
         cur.execute(
             """INSERT INTO sets (
@@ -156,8 +178,18 @@ def run():
         inserted += 1
     print(f"  sets:       {inserted} rows")
 
-    # ── body_composition (skipped — cleared per instructions) ─
-    print("  body_composition: skipped (cleared for fresh start)")
+    # ── body_composition ─────────────────────────────────────────
+    body_df = sheets["Body_Composition"]
+    for _, row in body_df.iterrows():
+        cur.execute(
+            "INSERT OR IGNORE INTO body_composition (date, bodyweight_kg, body_fat_pct) VALUES (?, ?, ?)",
+            (
+                fmt_date(row["Date"]),
+                float(row["Bodyweight (kg)"]),
+                float(row["Body Fat (%)"]) if pd.notna(row["Body Fat (%)"]) else None
+            )
+        )
+    print(f"  body_composition: {len(body_df)} rows")
 
     con.commit()
     con.close()
@@ -166,7 +198,7 @@ def run():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     print("\nVerification:")
-    for table in ["exercises", "programmes", "sessions", "sets", "body_composition", "users"]:
+    for table in ["exercises", "programmes", "sessions", "sets", "body_composition", "users", "goals"]:
         cur.execute(f"SELECT COUNT(*) FROM {table}")
         print(f"  {table:<20} {cur.fetchone()[0]} rows")
 
