@@ -152,3 +152,6 @@ server/service-account.json
 *.db-shm
 *.db-wal
 *.db.bak-*
+# OS cruft and stray local test artifacts
+.DS_Store
+server/cookies.txt
