@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
+const requireAuth = require("../middleware/auth");
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -10,6 +11,10 @@ const COOKIE_OPTS = {
   secure: process.env.NODE_ENV === "production",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
 };
+
+// Fallback guards against a missing env var producing a token with no
+// expiry. Kept in step with the cookie maxAge above (7 days).
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 // POST /api/auth/register
 // Only works if no users exist yet
@@ -34,7 +39,7 @@ router.post("/register", async (req, res) => {
   const token = jwt.sign(
     { id: result.lastInsertRowid, username },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN },
+    { expiresIn: JWT_EXPIRES_IN },
   );
 
   res.cookie("token", token, COOKIE_OPTS);
@@ -61,7 +66,7 @@ router.post("/login", async (req, res) => {
   const token = jwt.sign(
     { id: user.id, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN },
+    { expiresIn: JWT_EXPIRES_IN },
   );
 
   res.cookie("token", token, COOKIE_OPTS);
@@ -85,6 +90,30 @@ router.get("/me", (req, res) => {
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });
   }
+});
+
+// POST /api/auth/create-user — authenticated, creates additional users
+router.post("/create-user", requireAuth, async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ error: "username and password are required" });
+  }
+
+  const existing = db
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .get(username);
+  if (existing) {
+    return res.status(409).json({ error: "Username already taken" });
+  }
+
+  const hash = await bcrypt.hash(password, 12);
+  const result = db
+    .prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)")
+    .run(username, hash);
+
+  res.status(201).json({ id: result.lastInsertRowid, username });
 });
 
 module.exports = router;

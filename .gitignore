@@ -148,3 +148,7 @@ node_modules/
 server/gym.db
 server/service-account.json
 *.db
+# SQLite WAL sidecar files and DB backups
+*.db-shm
+*.db-wal
+*.db.bak-*
