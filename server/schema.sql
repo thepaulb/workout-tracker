@@ -33,11 +33,13 @@ CREATE TABLE programmes (
 -- -------------------------------------------------------------
 CREATE TABLE sessions (
     id              INTEGER PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id),
     date            TEXT    NOT NULL,       -- ISO 8601: YYYY-MM-DD
     programme_id    INTEGER REFERENCES programmes(id) ON DELETE SET NULL,
     notes           TEXT
 );
 
+CREATE INDEX idx_sessions_user ON sessions(user_id);
 CREATE INDEX idx_sessions_date ON sessions(date);
 CREATE INDEX idx_sessions_programme ON sessions(programme_id);
 
@@ -73,11 +75,14 @@ CREATE INDEX idx_sets_exercise   ON sets(exercise_id);
 -- -------------------------------------------------------------
 CREATE TABLE body_composition (
     id              INTEGER PRIMARY KEY,
-    date            TEXT    NOT NULL UNIQUE,    -- ISO 8601: YYYY-MM-DD
+    user_id         INTEGER NOT NULL REFERENCES users(id),
+    date            TEXT    NOT NULL,           -- ISO 8601: YYYY-MM-DD
     bodyweight_kg   REAL    NOT NULL,
-    body_fat_pct    REAL
+    body_fat_pct    REAL,
+    UNIQUE(user_id, date)
 );
 
+CREATE INDEX idx_body_composition_user ON body_composition(user_id);
 CREATE INDEX idx_body_composition_date ON body_composition(date);
 
 -- -------------------------------------------------------------
@@ -90,6 +95,24 @@ CREATE TABLE users (
     password_hash   TEXT    NOT NULL,
     created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+-- -------------------------------------------------------------
+-- goals
+-- Per-user target (weight or reps) for a given exercise.
+-- -------------------------------------------------------------
+CREATE TABLE goals (
+    id              INTEGER PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id),
+    exercise_id     INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+    target_type     TEXT    NOT NULL CHECK(target_type IN ('weight','reps')),
+    target_value    REAL    NOT NULL,
+    deadline        TEXT,
+    completed_at    TEXT,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_goals_user     ON goals(user_id);
+CREATE INDEX idx_goals_exercise ON goals(exercise_id);
 
 -- -------------------------------------------------------------
 -- Ladder view — generated, not stored

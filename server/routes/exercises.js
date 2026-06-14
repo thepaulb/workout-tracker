@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const requireAuth = require("../middleware/auth");
 
 // GET all exercises
 router.get("/", (req, res) => {
@@ -15,7 +14,7 @@ router.get("/", (req, res) => {
   res.json(exercises);
 });
 
-// GET single exercise with all sets history
+// GET single exercise with the current user's set history
 router.get("/:id", (req, res) => {
   const exercise = db
     .prepare("SELECT * FROM exercises WHERE id = ?")
@@ -28,17 +27,17 @@ router.get("/:id", (req, res) => {
     SELECT st.*, s.date, s.id AS session_id
     FROM sets st
     JOIN sessions s ON s.id = st.session_id
-    WHERE st.exercise_id = ?
+    WHERE st.exercise_id = ? AND s.user_id = ?
     ORDER BY s.date DESC
   `,
     )
-    .all(req.params.id);
+    .all(req.params.id, req.user.id);
 
   res.json(exercise);
 });
 
 // POST new exercise
-router.post("/", requireAuth, (req, res) => {
+router.post("/", (req, res) => {
   const { name, category, equipment, notes } = req.body;
   if (!name || !category || !equipment) {
     return res
@@ -58,7 +57,7 @@ router.post("/", requireAuth, (req, res) => {
 });
 
 // PATCH update exercise
-router.patch("/:id", requireAuth, (req, res) => {
+router.patch("/:id", (req, res) => {
   const exercise = db
     .prepare("SELECT id FROM exercises WHERE id = ?")
     .get(req.params.id);

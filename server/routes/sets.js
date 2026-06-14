@@ -1,10 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
-const requireAuth = require("../middleware/auth");
+
+// Returns the session row only if it belongs to the given user.
+function ownedSession(sessionId, userId) {
+  return db
+    .prepare("SELECT id FROM sessions WHERE id = ? AND user_id = ?")
+    .get(sessionId, userId);
+}
 
 // GET all sets for a session (usually accessed via /api/sessions/:id but useful standalone)
 router.get("/session/:sessionId", (req, res) => {
+  if (!ownedSession(req.params.sessionId, req.user.id)) {
+    return res.status(404).json({ error: "Session not found" });
+  }
+
   const sets = db
     .prepare(
       `
@@ -21,7 +31,7 @@ router.get("/session/:sessionId", (req, res) => {
 });
 
 // POST new set
-router.post("/", requireAuth, (req, res) => {
+router.post("/", (req, res) => {
   const {
     session_id,
     exercise_id,
@@ -42,6 +52,10 @@ router.post("/", requireAuth, (req, res) => {
     return res
       .status(400)
       .json({ error: "session_id, exercise_id and set_number are required" });
+  }
+
+  if (!ownedSession(session_id, req.user.id)) {
+    return res.status(404).json({ error: "Session not found" });
   }
 
   const result = db
@@ -75,8 +89,17 @@ router.post("/", requireAuth, (req, res) => {
 });
 
 // PATCH update set
-router.patch("/:id", requireAuth, (req, res) => {
-  const set = db.prepare("SELECT id FROM sets WHERE id = ?").get(req.params.id);
+router.patch("/:id", (req, res) => {
+  const set = db
+    .prepare(
+      `
+      SELECT st.id
+      FROM sets st
+      JOIN sessions s ON s.id = st.session_id
+      WHERE st.id = ? AND s.user_id = ?
+    `,
+    )
+    .get(req.params.id, req.user.id);
   if (!set) return res.status(404).json({ error: "Set not found" });
 
   const {
@@ -125,8 +148,17 @@ router.patch("/:id", requireAuth, (req, res) => {
 });
 
 // DELETE set
-router.delete("/:id", requireAuth, (req, res) => {
-  const set = db.prepare("SELECT id FROM sets WHERE id = ?").get(req.params.id);
+router.delete("/:id", (req, res) => {
+  const set = db
+    .prepare(
+      `
+      SELECT st.id
+      FROM sets st
+      JOIN sessions s ON s.id = st.session_id
+      WHERE st.id = ? AND s.user_id = ?
+    `,
+    )
+    .get(req.params.id, req.user.id);
   if (!set) return res.status(404).json({ error: "Set not found" });
 
   db.prepare("DELETE FROM sets WHERE id = ?").run(req.params.id);
@@ -141,12 +173,12 @@ router.get("/last/:exerciseId", (req, res) => {
     SELECT st.*, s.date
     FROM sets st
     JOIN sessions s ON s.id = st.session_id
-    WHERE st.exercise_id = ?
+    WHERE st.exercise_id = ? AND s.user_id = ?
     ORDER BY s.date DESC, st.set_number DESC
     LIMIT 1
   `,
     )
-    .get(req.params.exerciseId);
+    .get(req.params.exerciseId, req.user.id);
 
   res.json(row ?? null);
 });

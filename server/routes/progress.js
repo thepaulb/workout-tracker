@@ -20,11 +20,12 @@ router.get("/bests", (req, res) => {
     FROM exercises e
     JOIN sets st ON st.exercise_id = e.id
     JOIN sessions s ON s.id = st.session_id
+    WHERE s.user_id = ?
     GROUP BY e.id
     ORDER BY total_volume DESC
   `,
     )
-    .all();
+    .all(req.user.id);
   res.json(rows);
 });
 
@@ -39,10 +40,12 @@ router.get("/prs", (req, res) => {
       MAX(st.reps)      AS best_reps
     FROM exercises e
     JOIN sets st ON st.exercise_id = e.id
+    JOIN sessions s ON s.id = st.session_id
+    WHERE s.user_id = ?
     GROUP BY e.id
   `,
     )
-    .all();
+    .all(req.user.id);
 
   const map = {};
   for (const row of rows) {

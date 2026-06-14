@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-const requireAuth = require("../middleware/auth");
-
 // GET all sessions with programme name and set count
 router.get("/", (req, res) => {
   const sessions = db
@@ -18,11 +16,12 @@ router.get("/", (req, res) => {
     FROM sessions s
     LEFT JOIN programmes p ON p.id = s.programme_id
     LEFT JOIN sets st ON st.session_id = s.id
+    WHERE s.user_id = ?
     GROUP BY s.id
     ORDER BY s.date DESC
   `,
     )
-    .all();
+    .all(req.user.id);
 
   res.json(sessions);
 });
@@ -35,10 +34,10 @@ router.get("/:id", (req, res) => {
     SELECT s.*, p.name AS programme
     FROM sessions s
     LEFT JOIN programmes p ON p.id = s.programme_id
-    WHERE s.id = ?
+    WHERE s.id = ? AND s.user_id = ?
   `,
     )
-    .get(req.params.id);
+    .get(req.params.id, req.user.id);
 
   if (!session) return res.status(404).json({ error: "Session not found" });
 
@@ -59,7 +58,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST new session
-router.post("/", requireAuth, (req, res) => {
+router.post("/", (req, res) => {
   const { date, programme_id, notes } = req.body;
 
   if (!date) return res.status(400).json({ error: "date is required" });
@@ -67,10 +66,10 @@ router.post("/", requireAuth, (req, res) => {
   const result = db
     .prepare(
       `
-    INSERT INTO sessions (date, programme_id, notes) VALUES (?, ?, ?)
+    INSERT INTO sessions (user_id, date, programme_id, notes) VALUES (?, ?, ?, ?)
   `,
     )
-    .run(date, programme_id ?? null, notes ?? null);
+    .run(req.user.id, date, programme_id ?? null, notes ?? null);
 
   res.status(201).json({ id: result.lastInsertRowid });
 });
@@ -88,23 +87,24 @@ router.get("/stats/volume", (req, res) => {
       COUNT(st.id)                 AS total_sets
     FROM sessions s
     JOIN sets st ON st.session_id = s.id
-    WHERE st.weight_kg IS NOT NULL
+    WHERE s.user_id = ?
+      AND st.weight_kg IS NOT NULL
       AND st.reps IS NOT NULL
     GROUP BY week
     ORDER BY week ASC
   `,
     )
-    .all();
+    .all(req.user.id);
   res.json(rows);
 });
 
 // PATCH update session
-router.patch("/:id", requireAuth, (req, res) => {
+router.patch("/:id", (req, res) => {
   const { date, programme_id, notes } = req.body;
 
   const session = db
-    .prepare("SELECT id FROM sessions WHERE id = ?")
-    .get(req.params.id);
+    .prepare("SELECT id FROM sessions WHERE id = ? AND user_id = ?")
+    .get(req.params.id, req.user.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
 
   db.prepare(
@@ -121,10 +121,10 @@ router.patch("/:id", requireAuth, (req, res) => {
 });
 
 // DELETE session (cascades to sets)
-router.delete("/:id", requireAuth, (req, res) => {
+router.delete("/:id", (req, res) => {
   const session = db
-    .prepare("SELECT id FROM sessions WHERE id = ?")
-    .get(req.params.id);
+    .prepare("SELECT id FROM sessions WHERE id = ? AND user_id = ?")
+    .get(req.params.id, req.user.id);
   if (!session) return res.status(404).json({ error: "Session not found" });
 
   db.prepare("DELETE FROM sessions WHERE id = ?").run(req.params.id);
