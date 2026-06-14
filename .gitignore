@@ -154,4 +154,6 @@ server/service-account.json
 *.db.bak-*
 # OS cruft and stray local test artifacts
 .DS_Store
-server/cookies.txt
+cookies.txt
+# Local data-import spreadsheets (not shipped in the repo)
+Gym_Restructured_*.xlsx
