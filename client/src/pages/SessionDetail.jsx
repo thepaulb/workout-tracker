@@ -55,8 +55,8 @@ export default function SessionDetail() {
               <span className={styles.setNum}>#{set.set_number}</span>
               <span className={styles.exercise}>
                 {set.exercise_name}
-                {isWeightPR && <PRBadge type="weight" />}
-                {isRepsPR && <PRBadge type="reps" />}
+                {Boolean(isWeightPR) && <PRBadge type="weight" />}
+                {Boolean(isRepsPR) && <PRBadge type="reps" />}
               </span>
               <span className={styles.detail}>{formatSet(set)}</span>
               {set.is_ladder ? (
