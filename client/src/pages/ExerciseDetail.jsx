@@ -23,7 +23,7 @@ export default function ExerciseDetail() {
   if (loading) return <div className={styles.state}>Loading...</div>;
   if (error) return <div className={styles.state}>Error: {error}</div>;
 
-  const grouped = groupBySession(exercise.history);
+  const grouped = groupBySession(exercise.history).reverse();
 
   return (
     <div className={styles.page}>
