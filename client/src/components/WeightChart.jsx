@@ -6,6 +6,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ReferenceLine,
 } from "recharts";
 import styles from "./WeightChart.module.scss";
@@ -16,8 +17,13 @@ export default function WeightChart({ history }) {
 
   const weights = data.map((d) => d.weight);
   const maxWeight = Math.max(...weights);
-  const minWeight = Math.min(...weights);
-  const padding = (maxWeight - minWeight) * 0.1 || 2.5;
+
+  const values = data.flatMap((d) =>
+    d.oneRepMax != null ? [d.weight, d.oneRepMax] : [d.weight]
+  );
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+  const padding = (maxValue - minValue) * 0.1 || 2.5;
 
   return (
     <div className={styles.wrapper}>
@@ -40,7 +46,7 @@ export default function WeightChart({ history }) {
             tickFormatter={formatTick}
           />
           <YAxis
-            domain={[minWeight - padding, maxWeight + padding]}
+            domain={[minValue - padding, maxValue + padding]}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
             axisLine={false}
             tickLine={false}
@@ -48,6 +54,9 @@ export default function WeightChart({ history }) {
             width={48}
           />
           <Tooltip content={<CustomTooltip />} />
+          <Legend
+            wrapperStyle={{ fontSize: "0.75rem", color: "#6b6e74" }}
+          />
           <ReferenceLine
             y={maxWeight}
             stroke="#3ecf8e"
@@ -57,10 +66,22 @@ export default function WeightChart({ history }) {
           <Line
             type="monotone"
             dataKey="weight"
+            name="Weight"
             stroke="#4a9eff"
             strokeWidth={2}
             dot={{ fill: "#4a9eff", r: 3, strokeWidth: 0 }}
             activeDot={{ fill: "#4a9eff", r: 5, strokeWidth: 0 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="oneRepMax"
+            name="Est. 1RM"
+            stroke="#a78bfa"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            dot={{ fill: "#a78bfa", r: 3, strokeWidth: 0 }}
+            activeDot={{ fill: "#a78bfa", r: 5, strokeWidth: 0 }}
+            connectNulls
           />
         </LineChart>
       </ResponsiveContainer>
@@ -75,6 +96,9 @@ function CustomTooltip({ active, payload }) {
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{formatFullDate(d.date)}</div>
       <div className={styles.tooltipWeight}>{d.weight}kg</div>
+      {d.oneRepMax != null && (
+        <div className={styles.tooltipOneRepMax}>Est. 1RM {d.oneRepMax}kg</div>
+      )}
       <div className={styles.tooltipSets}>
         {d.sets} sets · best {d.bestReps} reps
       </div>
@@ -92,10 +116,16 @@ function buildChartData(history) {
         date: set.date,
         weights: [],
         reps: [],
+        oneRepMaxes: [],
       };
     }
     bySession[set.session_id].weights.push(set.weight_kg);
-    if (set.reps) bySession[set.session_id].reps.push(set.reps);
+    if (set.reps) {
+      bySession[set.session_id].reps.push(set.reps);
+      bySession[set.session_id].oneRepMaxes.push(
+        epleyOneRepMax(set.weight_kg, set.reps)
+      );
+    }
   }
 
   return Object.values(bySession)
@@ -105,7 +135,14 @@ function buildChartData(history) {
       weight: Math.max(...s.weights),
       sets: s.weights.length,
       bestReps: s.reps.length ? Math.max(...s.reps) : "—",
+      oneRepMax: s.oneRepMaxes.length
+        ? Math.round(Math.max(...s.oneRepMaxes) * 10) / 10
+        : null,
     }));
+}
+
+function epleyOneRepMax(weight, reps) {
+  return weight * (1 + reps / 30);
 }
 
 function formatTick(dateStr) {
