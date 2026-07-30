@@ -157,3 +157,6 @@ server/service-account.json
 cookies.txt
 # Local data-import spreadsheets (not shipped in the repo)
 Gym_Restructured_*.xlsx
+#VS Code debug/task config for running the Express server and Chrome debugger
+.vscode/
+
