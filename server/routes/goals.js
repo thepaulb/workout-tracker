@@ -3,11 +3,19 @@ const router = express.Router();
 const db = require("../db");
 
 // Current best value for an exercise, counting only the given user's sets.
+// distance goals are compared in km, pace goals in km/h.
 function currentValue(targetType, exerciseId, userId) {
   const row = db
     .prepare(
       `
-    SELECT MAX(CASE WHEN ? = 'weight' THEN weight_kg ELSE reps END) AS val
+    SELECT MAX(
+      CASE ?
+        WHEN 'weight'   THEN weight_kg
+        WHEN 'reps'     THEN reps
+        WHEN 'distance' THEN distance_m / 1000.0
+        WHEN 'pace'     THEN speed_kmh
+      END
+    ) AS val
     FROM sets
     WHERE exercise_id = ?
       AND session_id IN (SELECT id FROM sessions WHERE user_id = ?)
@@ -26,8 +34,10 @@ router.get("/", (req, res) => {
       g.*,
       e.name        AS exercise_name,
       e.category    AS exercise_category,
-      MAX(CASE WHEN g.target_type = 'weight' THEN st.weight_kg
-               WHEN g.target_type = 'reps'   THEN st.reps
+      MAX(CASE WHEN g.target_type = 'weight'   THEN st.weight_kg
+               WHEN g.target_type = 'reps'     THEN st.reps
+               WHEN g.target_type = 'distance' THEN st.distance_m / 1000.0
+               WHEN g.target_type = 'pace'     THEN st.speed_kmh
           END)      AS current_value
     FROM goals g
     JOIN exercises e ON e.id = g.exercise_id

@@ -1,7 +1,22 @@
 import { useState, useEffect } from "react";
 import { getGoals, createGoal, deleteGoal } from "../api/goals";
 import { getExercises } from "../api/exercises";
+import { isCardio } from "../lib/exerciseMetrics";
 import styles from "./Goals.module.scss";
+
+const UNITS = {
+  weight: "kg",
+  reps: " reps",
+  distance: "km",
+  pace: "km/h",
+};
+
+const TARGET_PLACEHOLDERS = {
+  weight: "100",
+  reps: "20",
+  distance: "5",
+  pace: "12",
+};
 
 export default function Goals() {
   const [goals, setGoals] = useState([]);
@@ -16,6 +31,11 @@ export default function Goals() {
     target_value: "",
     deadline: "",
   });
+
+  const selectedExercise = exercises.find(
+    (ex) => String(ex.id) === form.exercise_id,
+  );
+  const selectedIsCardio = isCardio(selectedExercise);
 
   useEffect(() => {
     Promise.all([getGoals(), getExercises()])
@@ -83,9 +103,18 @@ export default function Goals() {
               <label>Exercise</label>
               <select
                 value={form.exercise_id}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, exercise_id: e.target.value }))
-                }
+                onChange={(e) => {
+                  const exercise_id = e.target.value;
+                  const exercise = exercises.find(
+                    (ex) => String(ex.id) === exercise_id,
+                  );
+                  const cardio = isCardio(exercise);
+                  setForm((f) => ({
+                    ...f,
+                    exercise_id,
+                    target_type: cardio ? "distance" : "weight",
+                  }));
+                }}
               >
                 <option value="">— Select exercise —</option>
                 {exercises.map((ex) => (
@@ -106,13 +135,22 @@ export default function Goals() {
                   }
                   className={styles.targetType}
                 >
-                  <option value="weight">Weight (kg)</option>
-                  <option value="reps">Reps</option>
+                  {selectedIsCardio ? (
+                    <>
+                      <option value="distance">Distance (km)</option>
+                      <option value="pace">Pace (km/h)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="weight">Weight (kg)</option>
+                      <option value="reps">Reps</option>
+                    </>
+                  )}
                 </select>
                 <input
                   type="number"
                   step="0.5"
-                  placeholder={form.target_type === "weight" ? "100" : "20"}
+                  placeholder={TARGET_PLACEHOLDERS[form.target_type]}
                   value={form.target_value}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, target_value: e.target.value }))
@@ -210,7 +248,7 @@ function GoalCard({ goal, onDelete, completed }) {
         <span className={styles.separator}>/</span>
         <span className={styles.targetValue}>
           {goal.target_value}
-          {goal.target_type === "weight" ? "kg" : " reps"}
+          {UNITS[goal.target_type]}
         </span>
       </div>
 

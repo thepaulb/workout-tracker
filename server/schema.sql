@@ -104,7 +104,7 @@ CREATE TABLE goals (
     id              INTEGER PRIMARY KEY,
     user_id         INTEGER NOT NULL REFERENCES users(id),
     exercise_id     INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
-    target_type     TEXT    NOT NULL CHECK(target_type IN ('weight','reps')),
+    target_type     TEXT    NOT NULL CHECK(target_type IN ('weight','reps','distance','pace')),
     target_value    REAL    NOT NULL,
     deadline        TEXT,
     completed_at    TEXT,
