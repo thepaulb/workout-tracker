@@ -1,11 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import { isCardio, formatDistanceKm } from "../lib/exerciseMetrics";
 import styles from "./PersonalBests.module.scss";
 
 export default function PersonalBests({ bests }) {
   const navigate = useNavigate();
 
-  const withWeight = bests.filter((b) => b.best_weight);
-  const bodyweight = bests.filter((b) => !b.best_weight && b.best_reps);
+  const cardio = bests.filter(isCardio);
+  const withWeight = bests.filter((b) => !isCardio(b) && b.best_weight);
+  const bodyweight = bests.filter(
+    (b) => !isCardio(b) && !b.best_weight && b.best_reps,
+  );
 
   return (
     <div className={styles.wrapper}>
@@ -33,6 +37,44 @@ export default function PersonalBests({ bests }) {
                   </span>
                   <span className={styles.best}>
                     <span className={styles.bestValue}>{ex.session_count}</span>
+                    <span className={styles.bestLabel}>sessions</span>
+                  </span>
+                </div>
+                <div className={styles.last}>{formatDate(ex.last_session)}</div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {cardio.length > 0 && (
+        <section className={styles.group}>
+          <h3 className={styles.groupTitle}>Cardio</h3>
+          <ul className={styles.list}>
+            {cardio.map((ex) => (
+              <li
+                key={ex.id}
+                className={styles.row}
+                onClick={() => navigate(`/exercises/${ex.id}`)}
+              >
+                <div className={styles.name}>{ex.name}</div>
+                <div className={styles.bests}>
+                  <span className={styles.best}>
+                    <span className={styles.bestValue}>
+                      {formatDistanceKm(ex.best_distance)}
+                    </span>
+                    <span className={styles.bestLabel}>best distance</span>
+                  </span>
+                  <span className={styles.best}>
+                    <span className={styles.bestValue}>
+                      {ex.best_speed ? `${ex.best_speed}km/h` : "—"}
+                    </span>
+                    <span className={styles.bestLabel}>best pace</span>
+                  </span>
+                  <span className={styles.best}>
+                    <span className={styles.bestValue}>
+                      {ex.session_count}
+                    </span>
                     <span className={styles.bestLabel}>sessions</span>
                   </span>
                 </div>

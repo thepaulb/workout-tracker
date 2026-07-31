@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getExercise } from "../api/exercises";
 import WeightChart from "../components/WeightChart";
 import RepsChart from "../components/RepsChart";
+import { formatSet, isCardio, formatDistanceKm } from "../lib/exerciseMetrics";
 
 import styles from "./ExerciseDetail.module.scss";
 
@@ -24,6 +25,7 @@ export default function ExerciseDetail() {
   if (error) return <div className={styles.state}>Error: {error}</div>;
 
   const grouped = groupBySession(exercise.history).reverse();
+  const cardio = isCardio(exercise);
 
   return (
     <div className={styles.page}>
@@ -48,22 +50,45 @@ export default function ExerciseDetail() {
           <span className={styles.statValue}>{exercise.history.length}</span>
           <span className={styles.statLabel}>Total Sets</span>
         </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>
-            {getBestWeight(exercise.history)}
-          </span>
-          <span className={styles.statLabel}>Best Weight</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>
-            {getBestReps(exercise.history)}
-          </span>
-          <span className={styles.statLabel}>Best Reps</span>
-        </div>
+        {cardio ? (
+          <>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getBestDistance(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Best Distance</span>
+            </div>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getBestPace(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Best Pace</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getBestWeight(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Best Weight</span>
+            </div>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getBestReps(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Best Reps</span>
+            </div>
+          </>
+        )}
       </div>
 
-      <WeightChart history={exercise.history} />
-      <RepsChart history={exercise.history} />
+      {!cardio && (
+        <>
+          <WeightChart history={exercise.history} />
+          <RepsChart history={exercise.history} />
+        </>
+      )}
 
       <ul className={styles.history}>
         {grouped.map(({ date, session_id, sets }) => (
@@ -117,6 +142,16 @@ function getBestReps(history) {
   return reps.length ? Math.max(...reps) : "—";
 }
 
+function getBestDistance(history) {
+  const distances = history.map((s) => s.distance_m).filter(Boolean);
+  return distances.length ? formatDistanceKm(Math.max(...distances)) : "—";
+}
+
+function getBestPace(history) {
+  const speeds = history.map((s) => s.speed_kmh).filter(Boolean);
+  return speeds.length ? `${Math.max(...speeds)}km/h` : "—";
+}
+
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString("en-GB", {
     weekday: "short",
@@ -124,15 +159,4 @@ function formatDate(dateStr) {
     month: "short",
     year: "numeric",
   });
-}
-
-function formatSet(set) {
-  const parts = [];
-  if (set.reps) parts.push(`${set.reps} reps`);
-  if (set.weight_kg) parts.push(`${set.weight_kg}kg`);
-  if (set.weight_note) parts.push(set.weight_note);
-  if (set.duration_min) parts.push(`${set.duration_min}min`);
-  if (set.distance_m) parts.push(`${set.distance_m}m`);
-  if (set.speed_kmh) parts.push(`${set.speed_kmh}km/h`);
-  return parts.join(" · ") || "—";
 }

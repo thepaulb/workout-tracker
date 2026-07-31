@@ -5,6 +5,12 @@ import { getExercises } from "../api/exercises";
 import { createSet, deleteSet, getLastSet } from "../api/sets";
 import { getPRs } from "../api/progress";
 import { checkGoals } from "../api/goals";
+import {
+  isCardio,
+  formatSet,
+  clockToMinutes,
+  computeSpeedKmh,
+} from "../lib/exerciseMetrics";
 
 import styles from "./LogSession.module.scss";
 
@@ -23,6 +29,8 @@ export default function LogSession() {
     reps: "",
     weight_kg: "",
     rest_min: "",
+    distance_km: "",
+    time_str: "",
     notes: "",
   });
 
@@ -46,40 +54,72 @@ export default function LogSession() {
       reps: "",
       weight_kg: last?.weight_kg ?? "",
       rest_min: "",
+      distance_km: "",
+      time_str: "",
       notes: "",
     });
     setView("log");
   }
 
+  const cardio = isCardio(selectedExercise);
   const currentPR = selectedExercise ? prs[selectedExercise.id] : null;
+
+  const durationMin = cardio && form.time_str ? clockToMinutes(form.time_str) : null;
+  const distanceM = cardio && form.distance_km ? parseFloat(form.distance_km) * 1000 : null;
+  const speedKmh = cardio
+    ? computeSpeedKmh(parseFloat(form.distance_km) || null, durationMin)
+    : null;
+
   const isWeightPR =
+    !cardio &&
     currentPR &&
     form.weight_kg &&
     parseFloat(form.weight_kg) >= currentPR.best_weight;
   const isRepsPR =
-    currentPR && form.reps && parseInt(form.reps) >= currentPR.best_reps;
+    !cardio && currentPR && form.reps && parseInt(form.reps) >= currentPR.best_reps;
+  const isDistancePR =
+    cardio && currentPR && distanceM && distanceM >= currentPR.best_distance;
+  const isPacePR =
+    cardio && currentPR && speedKmh && speedKmh >= currentPR.best_speed;
+  const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR;
 
   async function handleLogSet() {
-    if (!form.reps) return;
+    if (cardio ? !form.distance_km || !form.time_str : !form.reps) return;
     setSaving(true);
     try {
       const setsForExercise = session.sets.filter(
         (s) => s.exercise_id === selectedExercise.id,
       );
-      await createSet({
-        session_id: parseInt(id),
-        exercise_id: selectedExercise.id,
-        set_number: setsForExercise.length + 1,
-        reps: parseInt(form.reps),
-        weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-        rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
-        notes: form.notes || null,
-        is_ladder: false,
-      });
+      const payload = cardio
+        ? {
+            session_id: parseInt(id),
+            exercise_id: selectedExercise.id,
+            set_number: setsForExercise.length + 1,
+            distance_m: distanceM,
+            duration_min: durationMin,
+            speed_kmh: speedKmh,
+            notes: form.notes || null,
+            is_ladder: false,
+          }
+        : {
+            session_id: parseInt(id),
+            exercise_id: selectedExercise.id,
+            set_number: setsForExercise.length + 1,
+            reps: parseInt(form.reps),
+            weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+            rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
+            notes: form.notes || null,
+            is_ladder: false,
+          };
+      await createSet(payload);
       const updated = await getSession(id);
       await checkGoals(selectedExercise.id);
       setSession(updated);
-      setForm((f) => ({ ...f, reps: "", notes: "" }));
+      setForm((f) =>
+        cardio
+          ? { ...f, distance_km: "", time_str: "", notes: "" }
+          : { ...f, reps: "", notes: "" },
+      );
     } finally {
       setSaving(false);
     }
@@ -219,79 +259,125 @@ export default function LogSession() {
           )}
 
           <div className={styles.logForm}>
-            <div className={styles.logInputs}>
-              <div className={styles.logField}>
-                <label>Reps</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={form.reps}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, reps: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.logField}>
-                <label>Weight (kg)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.5"
-                  placeholder="0"
-                  value={form.weight_kg}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, weight_kg: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
+            {cardio ? (
+              <>
+                <div className={styles.logInputs}>
+                  <div className={styles.logField}>
+                    <label>Distance (km)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.1"
+                      placeholder="0"
+                      value={form.distance_km}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, distance_km: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={styles.logField}>
+                    <label>Time (mm:ss)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0:00"
+                      value={form.time_str}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, time_str: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className={styles.logField}>
+                  <label>Notes</label>
+                  <input
+                    type="text"
+                    placeholder="Optional"
+                    value={form.notes}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, notes: e.target.value }))
+                    }
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.logInputs}>
+                  <div className={styles.logField}>
+                    <label>Reps</label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={form.reps}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, reps: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={styles.logField}>
+                    <label>Weight (kg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.5"
+                      placeholder="0"
+                      value={form.weight_kg}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, weight_kg: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
 
-            <div className={styles.logInputs}>
-              <div className={styles.logField}>
-                <label>Rest (min)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.5"
-                  placeholder="0"
-                  value={form.rest_min}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, rest_min: e.target.value }))
-                  }
-                />
-              </div>
-              <div className={styles.logField}>
-                <label>Notes</label>
-                <input
-                  type="text"
-                  placeholder="Optional"
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, notes: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
+                <div className={styles.logInputs}>
+                  <div className={styles.logField}>
+                    <label>Rest (min)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.5"
+                      placeholder="0"
+                      value={form.rest_min}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, rest_min: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={styles.logField}>
+                    <label>Notes</label>
+                    <input
+                      type="text"
+                      placeholder="Optional"
+                      value={form.notes}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, notes: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
-            {(isWeightPR || isRepsPR) && (
+            {isPR && (
               <div className={styles.prAlert}>
                 🏆 New PR! {isWeightPR && `Weight: ${form.weight_kg}kg`}{" "}
                 {isRepsPR && `Reps: ${form.reps}`}
+                {isDistancePR && `Distance: ${form.distance_km}km`}{" "}
+                {isPacePR && `Pace: ${speedKmh}km/h`}
               </div>
             )}
 
             <div className={styles.logActions}>
               <button
-                className={`${styles.logSet} ${isWeightPR || isRepsPR ? styles.logSetPR : ""}`}
+                className={`${styles.logSet} ${isPR ? styles.logSetPR : ""}`}
                 onClick={handleLogSet}
-                disabled={saving || !form.reps}
+                disabled={
+                  saving ||
+                  (cardio ? !form.distance_km || !form.time_str : !form.reps)
+                }
               >
-                {saving
-                  ? "Logging..."
-                  : isWeightPR || isRepsPR
-                    ? "🏆 Log PR"
-                    : "Log Set"}
+                {saving ? "Logging..." : isPR ? "🏆 Log PR" : "Log Set"}
               </button>
               <button
                 className={styles.doneExercise}
@@ -347,16 +433,6 @@ function groupByCategory(exercises) {
     acc[ex.category].push(ex);
     return acc;
   }, {});
-}
-
-function formatSet(set) {
-  const parts = [];
-  if (set.reps) parts.push(`${set.reps} reps`);
-  if (set.weight_kg) parts.push(`${set.weight_kg}kg`);
-  if (set.weight_note) parts.push(set.weight_note);
-  if (set.duration_min) parts.push(`${set.duration_min}min`);
-  if (set.distance_m) parts.push(`${set.distance_m}m`);
-  return parts.join(" · ") || "—";
 }
 
 function formatDate(dateStr) {

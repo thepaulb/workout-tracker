@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
 import { getPRs } from "../api/progress";
 import PRBadge from "../components/PRBadge";
+import { formatSet } from "../lib/exerciseMetrics";
 import styles from "./SessionDetail.module.scss";
 
 export default function SessionDetail() {
@@ -46,17 +47,24 @@ export default function SessionDetail() {
           const isWeightPR =
             pr && set.weight_kg && set.weight_kg >= pr.best_weight;
           const isRepsPR = pr && set.reps && set.reps >= pr.best_reps;
+          const isDistancePR =
+            pr && set.distance_m && set.distance_m >= pr.best_distance;
+          const isPacePR =
+            pr && set.speed_kmh && set.speed_kmh >= pr.best_speed;
+          const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR;
 
           return (
             <li
               key={set.id}
-              className={`${styles.set} ${isWeightPR || isRepsPR ? styles.prSet : ""}`}
+              className={`${styles.set} ${isPR ? styles.prSet : ""}`}
             >
               <span className={styles.setNum}>#{set.set_number}</span>
               <span className={styles.exercise}>
                 {set.exercise_name}
                 {Boolean(isWeightPR) && <PRBadge type="weight" />}
                 {Boolean(isRepsPR) && <PRBadge type="reps" />}
+                {Boolean(isDistancePR) && <PRBadge type="distance" />}
+                {Boolean(isPacePR) && <PRBadge type="pace" />}
               </span>
               <span className={styles.detail}>{formatSet(set)}</span>
               {set.is_ladder ? (
@@ -77,15 +85,4 @@ function formatDate(dateStr) {
     month: "long",
     year: "numeric",
   });
-}
-
-function formatSet(set) {
-  const parts = [];
-  if (set.reps) parts.push(`${set.reps} reps`);
-  if (set.weight_kg) parts.push(`${set.weight_kg}kg`);
-  if (set.weight_note) parts.push(set.weight_note);
-  if (set.duration_min) parts.push(`${set.duration_min}min`);
-  if (set.distance_m) parts.push(`${set.distance_m}m`);
-  if (set.speed_kmh) parts.push(`${set.speed_kmh}km/h`);
-  return parts.join(" · ") || "—";
 }

@@ -14,6 +14,8 @@ router.get("/bests", (req, res) => {
       e.equipment,
       MAX(st.weight_kg)                            AS best_weight,
       MAX(st.reps)                                 AS best_reps,
+      MAX(st.distance_m)                           AS best_distance,
+      MAX(st.speed_kmh)                            AS best_speed,
       COUNT(DISTINCT s.id)                         AS session_count,
       MAX(s.date)                                  AS last_session,
       SUM(st.reps * COALESCE(st.weight_kg, 0))     AS total_volume
@@ -36,8 +38,10 @@ router.get("/prs", (req, res) => {
       `
     SELECT
       e.id,
-      MAX(st.weight_kg) AS best_weight,
-      MAX(st.reps)      AS best_reps
+      MAX(st.weight_kg)   AS best_weight,
+      MAX(st.reps)        AS best_reps,
+      MAX(st.distance_m)  AS best_distance,
+      MAX(st.speed_kmh)   AS best_speed
     FROM exercises e
     JOIN sets st ON st.exercise_id = e.id
     JOIN sessions s ON s.id = st.session_id
@@ -49,7 +53,12 @@ router.get("/prs", (req, res) => {
 
   const map = {};
   for (const row of rows) {
-    map[row.id] = { best_weight: row.best_weight, best_reps: row.best_reps };
+    map[row.id] = {
+      best_weight: row.best_weight,
+      best_reps: row.best_reps,
+      best_distance: row.best_distance,
+      best_speed: row.best_speed,
+    };
   }
 
   res.json(map);
