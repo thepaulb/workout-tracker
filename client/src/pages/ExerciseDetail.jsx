@@ -7,12 +7,20 @@ import { formatSet, isCardio, formatDistanceKm } from "../lib/exerciseMetrics";
 
 import styles from "./ExerciseDetail.module.scss";
 
+const RANGES = [
+  { key: "1w", label: "1W", days: 7 },
+  { key: "1m", label: "1M", days: 30 },
+  { key: "3m", label: "3M", days: 90 },
+  { key: "6m", label: "6M", days: 180 },
+];
+
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [range, setRange] = useState("all");
 
   useEffect(() => {
     getExercise(id)
@@ -26,6 +34,7 @@ export default function ExerciseDetail() {
 
   const grouped = groupBySession(exercise.history).reverse();
   const cardio = isCardio(exercise);
+  const chartHistory = filterByRange(exercise.history, range);
 
   return (
     <div className={styles.page}>
@@ -85,8 +94,26 @@ export default function ExerciseDetail() {
 
       {!cardio && (
         <>
-          <WeightChart history={exercise.history} />
-          <RepsChart history={exercise.history} />
+          <div className={styles.rangeFilter}>
+            <button
+              className={`${styles.rangeButton} ${range === "all" ? styles.rangeButtonActive : ""}`}
+              onClick={() => setRange("all")}
+            >
+              All
+            </button>
+            {RANGES.map((r) => (
+              <button
+                key={r.key}
+                className={`${styles.rangeButton} ${range === r.key ? styles.rangeButtonActive : ""}`}
+                onClick={() => setRange(r.key)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <WeightChart history={chartHistory} />
+          <RepsChart history={chartHistory} />
         </>
       )}
 
@@ -115,6 +142,15 @@ export default function ExerciseDetail() {
       </ul>
     </div>
   );
+}
+
+function filterByRange(history, rangeKey) {
+  if (rangeKey === "all") return history;
+  const range = RANGES.find((r) => r.key === rangeKey);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - range.days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+  return history.filter((set) => set.date >= cutoffStr);
 }
 
 function groupBySession(history) {

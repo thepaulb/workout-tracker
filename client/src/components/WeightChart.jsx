@@ -75,7 +75,7 @@ export default function WeightChart({ history }) {
           <Line
             type="monotone"
             dataKey="oneRepMax"
-            name="Est. 1RM"
+            name="e1RM"
             stroke="#a78bfa"
             strokeWidth={2}
             strokeDasharray="4 3"
