@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExercise } from "../api/exercises";
+import { getPRs } from "../api/progress";
 import WeightChart from "../components/WeightChart";
 import RepsChart from "../components/RepsChart";
-import { formatSet, isCardio, formatDistanceKm } from "../lib/exerciseMetrics";
+import PRBadge from "../components/PRBadge";
+import {
+  formatSet,
+  isCardio,
+  formatDistanceKm,
+  getSetPRFlags,
+} from "../lib/exerciseMetrics";
 
 import styles from "./ExerciseDetail.module.scss";
 
@@ -18,13 +25,17 @@ export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState(null);
+  const [prs, setPRs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [range, setRange] = useState("all");
 
   useEffect(() => {
-    getExercise(id)
-      .then(setExercise)
+    Promise.all([getExercise(id), getPRs()])
+      .then(([ex, p]) => {
+        setExercise(ex);
+        setPRs(p);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -35,6 +46,7 @@ export default function ExerciseDetail() {
   const grouped = groupBySession(exercise.history).reverse();
   const cardio = isCardio(exercise);
   const chartHistory = filterByRange(exercise.history, range);
+  const pr = prs[exercise.id];
 
   return (
     <div className={styles.page}>
@@ -125,17 +137,31 @@ export default function ExerciseDetail() {
               <span className={styles.setCount}>{sets.length} sets</span>
             </div>
             <ul className={styles.sets}>
-              {sets.map((set) => (
-                <li key={set.id} className={styles.set}>
-                  <span className={styles.setNum}>#{set.set_number}</span>
-                  <span className={styles.detail}>{formatSet(set)}</span>
-                  {set.is_ladder ? (
-                    <span className={styles.ladder}>
-                      Ladder {set.ladder_step}
+              {sets.map((set) => {
+                const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isPR } =
+                  getSetPRFlags(set, pr);
+
+                return (
+                  <li
+                    key={set.id}
+                    className={`${styles.set} ${isPR ? styles.prSet : ""}`}
+                  >
+                    <span className={styles.setNum}>#{set.set_number}</span>
+                    <span className={styles.detail}>
+                      {formatSet(set)}
+                      {isWeightPR && <PRBadge type="weight" />}
+                      {isRepsPR && <PRBadge type="reps" />}
+                      {isDistancePR && <PRBadge type="distance" />}
+                      {isPacePR && <PRBadge type="pace" />}
                     </span>
-                  ) : null}
-                </li>
-              ))}
+                    {set.is_ladder ? (
+                      <span className={styles.ladder}>
+                        Ladder {set.ladder_step}
+                      </span>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </li>
         ))}

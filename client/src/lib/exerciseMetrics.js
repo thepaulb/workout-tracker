@@ -46,3 +46,23 @@ export function formatDistanceKm(meters) {
   if (!meters) return "—";
   return `${parseFloat((meters / 1000).toFixed(2))}km`;
 }
+
+export function getSetPRFlags(set, pr) {
+  const isWeightPR = Boolean(
+    pr && set.weight_kg && set.weight_kg >= pr.best_weight,
+  );
+  const isRepsPR = Boolean(pr && set.reps && set.reps >= pr.best_reps);
+  const isDistancePR = Boolean(
+    pr && set.distance_m && set.distance_m >= pr.best_distance,
+  );
+  const isPacePR = Boolean(
+    pr && set.speed_kmh && set.speed_kmh >= pr.best_speed,
+  );
+  return {
+    isWeightPR,
+    isRepsPR,
+    isDistancePR,
+    isPacePR,
+    isPR: isWeightPR || isRepsPR || isDistancePR || isPacePR,
+  };
+}

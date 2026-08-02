@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
 import { getPRs } from "../api/progress";
 import PRBadge from "../components/PRBadge";
-import { formatSet } from "../lib/exerciseMetrics";
+import { formatSet, getSetPRFlags } from "../lib/exerciseMetrics";
 import styles from "./SessionDetail.module.scss";
 
 export default function SessionDetail() {
@@ -44,14 +44,8 @@ export default function SessionDetail() {
       <ul className={styles.sets}>
         {session.sets.map((set) => {
           const pr = prs[set.exercise_id];
-          const isWeightPR =
-            pr && set.weight_kg && set.weight_kg >= pr.best_weight;
-          const isRepsPR = pr && set.reps && set.reps >= pr.best_reps;
-          const isDistancePR =
-            pr && set.distance_m && set.distance_m >= pr.best_distance;
-          const isPacePR =
-            pr && set.speed_kmh && set.speed_kmh >= pr.best_speed;
-          const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR;
+          const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isPR } =
+            getSetPRFlags(set, pr);
 
           return (
             <li
