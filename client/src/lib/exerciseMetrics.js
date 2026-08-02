@@ -47,6 +47,18 @@ export function formatDistanceKm(meters) {
   return `${parseFloat((meters / 1000).toFixed(2))}km`;
 }
 
+// Estimated 1RM for a single set. When a hard-enough RPE is logged
+// (>= 7), uses RPE-adjusted Epley (accounts for reps left in the tank);
+// otherwise falls back to plain Epley — the original, un-adjusted formula.
+export function calculateE1RM(weight, reps, rpe) {
+  if (!weight || !reps) return null;
+  if (rpe != null && rpe >= 7) {
+    const rir = 10 - rpe;
+    return weight * (1 + (reps + rir) / 30);
+  }
+  return weight * (1 + reps / 30);
+}
+
 export function getSetPRFlags(set, pr) {
   const isWeightPR = Boolean(
     pr && set.weight_kg && set.weight_kg >= pr.best_weight,

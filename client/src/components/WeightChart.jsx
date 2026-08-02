@@ -9,6 +9,7 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
+import { calculateE1RM } from "../lib/exerciseMetrics";
 import styles from "./WeightChart.module.scss";
 
 export default function WeightChart({ history }) {
@@ -122,9 +123,8 @@ function buildChartData(history) {
     bySession[set.session_id].weights.push(set.weight_kg);
     if (set.reps) {
       bySession[set.session_id].reps.push(set.reps);
-      bySession[set.session_id].oneRepMaxes.push(
-        epleyOneRepMax(set.weight_kg, set.reps)
-      );
+      const e1rm = calculateE1RM(set.weight_kg, set.reps, set.rpe);
+      if (e1rm != null) bySession[set.session_id].oneRepMaxes.push(e1rm);
     }
   }
 
@@ -139,10 +139,6 @@ function buildChartData(history) {
         ? Math.round(Math.max(...s.oneRepMaxes) * 10) / 10
         : null,
     }));
-}
-
-function epleyOneRepMax(weight, reps) {
-  return weight * (1 + reps / 30);
 }
 
 function formatTick(dateStr) {

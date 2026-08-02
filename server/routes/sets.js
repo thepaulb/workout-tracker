@@ -9,6 +9,14 @@ function ownedSession(sessionId, userId) {
     .get(sessionId, userId);
 }
 
+// RPE must be null/absent, or a number 6-10 in 0.5 increments.
+function isValidRpe(rpe) {
+  if (rpe === null || rpe === undefined) return true;
+  if (typeof rpe !== "number" || Number.isNaN(rpe)) return false;
+  if (rpe < 6 || rpe > 10) return false;
+  return Number.isInteger(rpe * 2);
+}
+
 // GET all sets for a session (usually accessed via /api/sessions/:id but useful standalone)
 router.get("/session/:sessionId", (req, res) => {
   if (!ownedSession(req.params.sessionId, req.user.id)) {
@@ -46,12 +54,19 @@ router.post("/", (req, res) => {
     is_ladder,
     ladder_step,
     notes,
+    rpe,
   } = req.body;
 
   if (!session_id || !exercise_id || !set_number) {
     return res
       .status(400)
       .json({ error: "session_id, exercise_id and set_number are required" });
+  }
+
+  if (!isValidRpe(rpe ?? null)) {
+    return res
+      .status(400)
+      .json({ error: "rpe must be null or a number 6-10 in 0.5 increments" });
   }
 
   if (!ownedSession(session_id, req.user.id)) {
@@ -65,8 +80,8 @@ router.post("/", (req, res) => {
       session_id, exercise_id, set_number,
       reps, weight_kg, weight_note,
       duration_min, distance_m, speed_kmh, rest_min,
-      is_ladder, ladder_step, notes
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+      is_ladder, ladder_step, notes, rpe
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `,
     )
     .run(
@@ -83,6 +98,7 @@ router.post("/", (req, res) => {
       is_ladder ? 1 : 0,
       ladder_step ?? null,
       notes ?? null,
+      rpe ?? null,
     );
 
   res.status(201).json({ id: result.lastInsertRowid });
@@ -113,7 +129,14 @@ router.patch("/:id", (req, res) => {
     is_ladder,
     ladder_step,
     notes,
+    rpe,
   } = req.body;
+
+  if (!isValidRpe(rpe ?? null)) {
+    return res
+      .status(400)
+      .json({ error: "rpe must be null or a number 6-10 in 0.5 increments" });
+  }
 
   db.prepare(
     `
@@ -127,7 +150,8 @@ router.patch("/:id", (req, res) => {
       rest_min     = COALESCE(?, rest_min),
       is_ladder    = COALESCE(?, is_ladder),
       ladder_step  = COALESCE(?, ladder_step),
-      notes        = COALESCE(?, notes)
+      notes        = COALESCE(?, notes),
+      rpe          = COALESCE(?, rpe)
     WHERE id = ?
   `,
   ).run(
@@ -141,6 +165,7 @@ router.patch("/:id", (req, res) => {
     is_ladder !== undefined ? (is_ladder ? 1 : 0) : null,
     ladder_step ?? null,
     notes ?? null,
+    rpe ?? null,
     req.params.id,
   );
 

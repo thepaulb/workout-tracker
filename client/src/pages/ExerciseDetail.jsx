@@ -4,6 +4,7 @@ import { getExercise } from "../api/exercises";
 import { getPRs } from "../api/progress";
 import WeightChart from "../components/WeightChart";
 import RepsChart from "../components/RepsChart";
+import RPEChart from "../components/RPEChart";
 import PRBadge from "../components/PRBadge";
 import {
   formatSet,
@@ -126,6 +127,7 @@ export default function ExerciseDetail() {
 
           <WeightChart history={chartHistory} />
           <RepsChart history={chartHistory} />
+          <RPEChart history={chartHistory} />
         </>
       )}
 

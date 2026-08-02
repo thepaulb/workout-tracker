@@ -11,6 +11,7 @@ import {
   clockToMinutes,
   computeSpeedKmh,
 } from "../lib/exerciseMetrics";
+import RPEInput from "../components/RPEInput";
 
 import styles from "./LogSession.module.scss";
 
@@ -32,6 +33,7 @@ export default function LogSession() {
     distance_km: "",
     time_str: "",
     notes: "",
+    rpe: null,
   });
 
   const [prs, setPRs] = useState({});
@@ -57,6 +59,7 @@ export default function LogSession() {
       distance_km: "",
       time_str: "",
       notes: "",
+      rpe: null,
     });
     setView("log");
   }
@@ -110,6 +113,7 @@ export default function LogSession() {
             rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
             notes: form.notes || null,
             is_ladder: false,
+            rpe: form.rpe,
           };
       await createSet(payload);
       const updated = await getSession(id);
@@ -118,7 +122,7 @@ export default function LogSession() {
       setForm((f) =>
         cardio
           ? { ...f, distance_km: "", time_str: "", notes: "" }
-          : { ...f, reps: "", notes: "" },
+          : { ...f, reps: "", notes: "", rpe: null },
       );
     } finally {
       setSaving(false);
@@ -356,6 +360,11 @@ export default function LogSession() {
                     />
                   </div>
                 </div>
+
+                <RPEInput
+                  value={form.rpe}
+                  onChange={(rpe) => setForm((f) => ({ ...f, rpe }))}
+                />
               </>
             )}
 

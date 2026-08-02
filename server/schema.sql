@@ -63,7 +63,8 @@ CREATE TABLE sets (
     rest_min        REAL,
     is_ladder       INTEGER NOT NULL DEFAULT 0,   -- boolean: 0 | 1
     ladder_step     INTEGER,
-    notes           TEXT
+    notes           TEXT,
+    rpe             REAL            -- rate of perceived exertion, 6-10 in 0.5 steps, NULL if not logged
 );
 
 CREATE INDEX idx_sets_session    ON sets(session_id);

@@ -45,6 +45,41 @@ describe("POST /api/sets", () => {
       .send({ session_id: sessionId, exercise_id: exerciseId });
     expect(res.status).toBe(400);
   });
+
+  it("accepts a valid rpe", async () => {
+    const res = await request(app)
+      .post("/api/sets")
+      .set("Cookie", cookie)
+      .send({ session_id: sessionId, exercise_id: exerciseId, set_number: 1, reps: 5, rpe: 8.5 });
+    expect(res.status).toBe(201);
+    const row = db.prepare("SELECT rpe FROM sets WHERE id = ?").get(res.body.id);
+    expect(row.rpe).toBe(8.5);
+  });
+
+  it("defaults rpe to null when omitted", async () => {
+    const res = await request(app)
+      .post("/api/sets")
+      .set("Cookie", cookie)
+      .send({ session_id: sessionId, exercise_id: exerciseId, set_number: 1, reps: 5 });
+    const row = db.prepare("SELECT rpe FROM sets WHERE id = ?").get(res.body.id);
+    expect(row.rpe).toBeNull();
+  });
+
+  it.each([5.5, 10.5, 0, -1])("rejects rpe outside 6-10 (%s)", async (rpe) => {
+    const res = await request(app)
+      .post("/api/sets")
+      .set("Cookie", cookie)
+      .send({ session_id: sessionId, exercise_id: exerciseId, set_number: 1, reps: 5, rpe });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects rpe not on a 0.5 increment", async () => {
+    const res = await request(app)
+      .post("/api/sets")
+      .set("Cookie", cookie)
+      .send({ session_id: sessionId, exercise_id: exerciseId, set_number: 1, reps: 5, rpe: 7.3 });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe("PATCH /api/sets/:id", () => {
@@ -68,6 +103,25 @@ describe("PATCH /api/sets/:id", () => {
       .send({ is_ladder: false });
     expect(res.status).toBe(200);
     expect(db.prepare("SELECT is_ladder FROM sets WHERE id = ?").get(setId).is_ladder).toBe(0);
+  });
+
+  it("updates rpe when given a valid value", async () => {
+    const setId = seedSet(sessionId, exerciseId, { reps: 5, weightKg: 100 });
+    const res = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set("Cookie", cookie)
+      .send({ rpe: 9 });
+    expect(res.status).toBe(200);
+    expect(db.prepare("SELECT rpe FROM sets WHERE id = ?").get(setId).rpe).toBe(9);
+  });
+
+  it("rejects an out-of-range rpe on update (400)", async () => {
+    const setId = seedSet(sessionId, exerciseId, { reps: 5 });
+    const res = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set("Cookie", cookie)
+      .send({ rpe: 12 });
+    expect(res.status).toBe(400);
   });
 });
 
