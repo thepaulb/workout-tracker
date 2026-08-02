@@ -67,21 +67,23 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-function buildChartData(history) {
-  const bySession = {};
+// Grouped by date, not session_id — a day can have multiple sessions
+// (e.g. AM/PM), and they should still collapse into one chart point.
+export function buildChartData(history) {
+  const byDate = {};
 
   for (const set of history) {
     if (!set.reps) continue;
-    if (!bySession[set.session_id]) {
-      bySession[set.session_id] = {
+    if (!byDate[set.date]) {
+      byDate[set.date] = {
         date: set.date,
         reps: [],
       };
     }
-    bySession[set.session_id].reps.push(set.reps);
+    byDate[set.date].reps.push(set.reps);
   }
 
-  return Object.values(bySession)
+  return Object.values(byDate)
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((s) => ({
       date: s.date,

@@ -73,17 +73,18 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-// For each session, find the set with the highest weight (the "top set")
-// and take its rpe. Sessions where the top set has no rpe logged are
-// skipped — nothing to plot.
-function buildChartData(history) {
-  const bySession = {};
+// For each date, find the set with the highest weight (the "top set")
+// across all of that day's sessions — a day can have multiple sessions
+// (e.g. AM/PM), and they should still collapse into one chart point.
+// Dates where the top set has no rpe logged are skipped — nothing to plot.
+export function buildChartData(history) {
+  const byDate = {};
 
   for (const set of history) {
     if (!set.weight_kg) continue;
-    const current = bySession[set.session_id];
+    const current = byDate[set.date];
     if (!current || set.weight_kg > current.topWeight) {
-      bySession[set.session_id] = {
+      byDate[set.date] = {
         date: set.date,
         topWeight: set.weight_kg,
         rpe: set.rpe ?? null,
@@ -91,7 +92,7 @@ function buildChartData(history) {
     }
   }
 
-  return Object.values(bySession)
+  return Object.values(byDate)
     .filter((s) => s.rpe != null)
     .sort((a, b) => a.date.localeCompare(b.date));
 }
