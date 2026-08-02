@@ -31,6 +31,7 @@ export function formatSet(set) {
   if (set.reps) parts.push(`${set.reps} reps`);
   if (set.weight_kg) parts.push(`${set.weight_kg}kg`);
   if (set.weight_note) parts.push(set.weight_note);
+  if (set.rpe != null) parts.push(`RPE ${set.rpe}`);
   return parts.join(" · ") || "—";
 }
 

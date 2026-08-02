@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateE1RM } from "./exerciseMetrics";
+import { calculateE1RM, formatSet } from "./exerciseMetrics";
 
 describe("calculateE1RM", () => {
   it("falls back to plain Epley when rpe is null", () => {
@@ -24,5 +24,23 @@ describe("calculateE1RM", () => {
     expect(calculateE1RM(null, 5, 8)).toBeNull();
     expect(calculateE1RM(100, null, 8)).toBeNull();
     expect(calculateE1RM(100, 0, 8)).toBeNull();
+  });
+});
+
+describe("formatSet", () => {
+  it("appends RPE when logged", () => {
+    expect(formatSet({ reps: 5, weight_kg: 80, rpe: 8.5 })).toBe(
+      "5 reps · 80kg · RPE 8.5",
+    );
+  });
+
+  it("omits RPE when not logged", () => {
+    expect(formatSet({ reps: 5, weight_kg: 80, rpe: null })).toBe(
+      "5 reps · 80kg",
+    );
+  });
+
+  it("omits RPE when the field is absent entirely", () => {
+    expect(formatSet({ reps: 5, weight_kg: 80 })).toBe("5 reps · 80kg");
   });
 });
