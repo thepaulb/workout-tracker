@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { weeklyDateAxis } from "../lib/DateAxisTick";
 import styles from "./RPEChart.module.scss";
 
 // RPE logged on the session's top set (highest weight), plotted over time.
@@ -16,13 +17,21 @@ export default function RPEChart({ history }) {
   const data = buildChartData(history);
   if (!data.length) return null;
 
+  const {
+    data: chartData,
+    xKey: dateKey,
+    domain: dateDomain,
+    ticks: dateTicks,
+    tick: DateTick,
+  } = weeklyDateAxis(data);
+
   return (
     <div className={styles.wrapper}>
       <h2 className={styles.title}>RPE at Top Set</h2>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart
-          data={data}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          data={chartData}
+          margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -30,11 +39,15 @@ export default function RPEChart({ history }) {
             vertical={false}
           />
           <XAxis
-            dataKey="date"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            dataKey={dateKey}
+            type="number"
+            domain={dateDomain}
+            ticks={dateTicks}
+            tick={DateTick}
             axisLine={false}
             tickLine={false}
-            tickFormatter={formatTick}
+            interval={0}
+            height={34}
           />
           <YAxis
             domain={[6, 10]}
@@ -95,13 +108,6 @@ export function buildChartData(history) {
   return Object.values(byDate)
     .filter((s) => s.rpe != null)
     .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function formatTick(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function formatFullDate(dateStr) {

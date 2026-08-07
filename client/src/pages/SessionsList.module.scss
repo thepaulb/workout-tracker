@@ -36,7 +36,7 @@
   border-radius: $radius;
   padding: 1rem 1.25rem;
   display: grid;
-  grid-template-columns: 180px 1fr auto;
+  grid-template-columns: 25% 25% 50%;
   align-items: center;
   gap: 1rem;
   transition: border-color 0.15s;

@@ -8,20 +8,35 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { weeklyDateAxis } from "../lib/DateAxisTick";
+import { niceStepDomain } from "../lib/niceAxis";
 import styles from "./BodyChart.module.scss";
 
 export default function BodyChart({ data }) {
   if (!data.length) return null;
 
   const hasBodyFat = data.some((d) => d.body_fat_pct);
+  const bodyweights = data.map((d) => d.bodyweight_kg);
+  const { domain: weightDomain, ticks: weightTicks } = niceStepDomain(
+    Math.min(...bodyweights),
+    Math.max(...bodyweights),
+    2
+  );
+  const {
+    data: chartData,
+    xKey: dateKey,
+    domain: dateDomain,
+    ticks: dateTicks,
+    tick: DateTick,
+  } = weeklyDateAxis(data);
 
   return (
     <div className={styles.wrapper}>
       <h2 className={styles.title}>Body Composition Over Time</h2>
       <ResponsiveContainer width="100%" height={260}>
         <LineChart
-          data={data}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          data={chartData}
+          margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -29,15 +44,20 @@ export default function BodyChart({ data }) {
             vertical={false}
           />
           <XAxis
-            dataKey="date"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            dataKey={dateKey}
+            type="number"
+            domain={dateDomain}
+            ticks={dateTicks}
+            tick={DateTick}
             axisLine={false}
             tickLine={false}
-            tickFormatter={formatTick}
-            interval="preserveStartEnd"
+            interval={0}
+            height={34}
           />
           <YAxis
             yAxisId="weight"
+            domain={weightDomain}
+            ticks={weightTicks}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
             axisLine={false}
             tickLine={false}
@@ -99,13 +119,6 @@ function CustomTooltip({ active, payload }) {
       )}
     </div>
   );
-}
-
-function formatTick(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function formatFullDate(dateStr) {

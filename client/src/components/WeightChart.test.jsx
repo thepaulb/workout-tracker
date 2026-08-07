@@ -13,7 +13,7 @@ describe("WeightChart", () => {
       { session_id: 1, date: "2026-01-01", weight_kg: 100, reps: 5, rpe: null },
     ];
     render(<WeightChart history={history} />);
-    expect(screen.getByText("Weight Progression")).toBeInTheDocument();
+    expect(screen.getByText("Weight Progression (KG)")).toBeInTheDocument();
   });
 });
 

@@ -10,6 +10,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { calculateE1RM } from "../lib/exerciseMetrics";
+import { weeklyDateAxis } from "../lib/DateAxisTick";
+import { niceStepDomain } from "../lib/niceAxis";
 import styles from "./WeightChart.module.scss";
 
 export default function WeightChart({ history }) {
@@ -24,15 +26,26 @@ export default function WeightChart({ history }) {
   );
   const maxValue = Math.max(...values);
   const minValue = Math.min(...values);
-  const padding = (maxValue - minValue) * 0.1 || 2.5;
+  const { domain: weightDomain, ticks: weightTicks } = niceStepDomain(
+    minValue,
+    maxValue,
+    5
+  );
+  const {
+    data: chartData,
+    xKey: dateKey,
+    domain: dateDomain,
+    ticks: dateTicks,
+    tick: DateTick,
+  } = weeklyDateAxis(data);
 
   return (
     <div className={styles.wrapper}>
-      <h2 className={styles.title}>Weight Progression</h2>
+      <h2 className={styles.title}>Weight Progression (KG)</h2>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart
-          data={data}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          data={chartData}
+          margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -40,18 +53,23 @@ export default function WeightChart({ history }) {
             vertical={false}
           />
           <XAxis
-            dataKey="date"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            dataKey={dateKey}
+            type="number"
+            domain={dateDomain}
+            ticks={dateTicks}
+            tick={DateTick}
             axisLine={false}
             tickLine={false}
-            tickFormatter={formatTick}
+            interval={0}
+            height={34}
           />
           <YAxis
-            domain={[minValue - padding, maxValue + padding]}
+            domain={weightDomain}
+            ticks={weightTicks}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(v) => `${v}kg`}
+            tickFormatter={(v) => `${v}`}
             width={48}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -141,13 +159,6 @@ export function buildChartData(history) {
         ? Math.round(Math.max(...s.oneRepMaxes) * 10) / 10
         : null,
     }));
-}
-
-function formatTick(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function formatFullDate(dateStr) {

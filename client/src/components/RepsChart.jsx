@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { makeDateTick } from "../lib/DateAxisTick";
 import styles from "./RepsChart.module.scss";
 
 export default function RepsChart({ history }) {
@@ -19,7 +20,7 @@ export default function RepsChart({ history }) {
       <ResponsiveContainer width="100%" height={240}>
         <BarChart
           data={data}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -28,10 +29,10 @@ export default function RepsChart({ history }) {
           />
           <XAxis
             dataKey="date"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            tick={makeDateTick(data)}
             axisLine={false}
             tickLine={false}
-            tickFormatter={formatTick}
+            height={34}
           />
           <YAxis
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
@@ -91,13 +92,6 @@ export function buildChartData(history) {
       sets: s.reps.length,
       bestReps: Math.max(...s.reps),
     }));
-}
-
-function formatTick(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function formatFullDate(dateStr) {

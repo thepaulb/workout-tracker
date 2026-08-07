@@ -7,6 +7,8 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { makeDateTick } from "../lib/DateAxisTick";
+import { niceZeroDomain } from "../lib/niceAxis";
 import styles from "./VolumeChart.module.scss";
 
 export default function VolumeChart({ data }) {
@@ -16,6 +18,9 @@ export default function VolumeChart({ data }) {
     ...d,
     volume_tonnes: Math.round(d.volume_kg / 100) / 10,
   }));
+  const { domain: volumeDomain, ticks: volumeTicks } = niceZeroDomain(
+    Math.max(...formatted.map((d) => d.volume_tonnes))
+  );
 
   return (
     <div className={styles.wrapper}>
@@ -26,7 +31,7 @@ export default function VolumeChart({ data }) {
       <ResponsiveContainer width="100%" height={260}>
         <BarChart
           data={formatted}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -35,18 +40,19 @@ export default function VolumeChart({ data }) {
           />
           <XAxis
             dataKey="week_start"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            tick={makeDateTick(formatted, "week_start")}
             axisLine={false}
             tickLine={false}
-            tickFormatter={formatTick}
             interval="preserveStartEnd"
+            height={34}
           />
           <YAxis
+            domain={volumeDomain}
+            ticks={volumeTicks}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
             axisLine={false}
             tickLine={false}
             width={40}
-            tickFormatter={(v) => `${v}t`}
           />
           <Tooltip content={<CustomTooltip />} />
           <Bar
@@ -73,13 +79,6 @@ function CustomTooltip({ active, payload }) {
       </div>
     </div>
   );
-}
-
-function formatTick(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function formatFullDate(dateStr) {
