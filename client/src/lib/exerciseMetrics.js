@@ -60,6 +60,45 @@ export function calculateE1RM(weight, reps, rpe) {
   return weight * (1 + reps / 30);
 }
 
+// "3d ago" / "Today" / "Yesterday" from a plain "YYYY-MM-DD" date string.
+export function formatDaysAgo(dateStr) {
+  if (!dateStr) return "—";
+  const days = daysSinceDate(dateStr);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return `${days}d ago`;
+}
+
+function daysSinceDate(dateStr) {
+  const last = new Date(dateStr);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((todayUtc - last.getTime()) / 86400000));
+}
+
+// Best e1RM among a batch of sets (e.g. one day's sets) that have both
+// weight_kg and reps. Returns null if none qualify.
+export function bestE1RMFromSets(sets) {
+  const weighted = sets.filter((s) => s.weight_kg && s.reps);
+  if (!weighted.length) return null;
+  const best = Math.max(
+    ...weighted.map((s) => calculateE1RM(s.weight_kg, s.reps, s.rpe)),
+  );
+  return Math.round(best * 10) / 10;
+}
+
+// Best reps among a batch of sets. Returns null if none have reps logged.
+export function bestRepsFromSets(sets) {
+  const repSets = sets.filter((s) => s.reps);
+  return repSets.length ? Math.max(...repSets.map((s) => s.reps)) : null;
+}
+
+// Best pace among a batch of sets. Returns null if none have speed logged.
+export function bestSpeedFromSets(sets) {
+  const paced = sets.filter((s) => s.speed_kmh);
+  return paced.length ? Math.max(...paced.map((s) => s.speed_kmh)) : null;
+}
+
 export function getSetPRFlags(set, pr) {
   const isWeightPR = Boolean(
     pr && set.weight_kg && set.weight_kg >= pr.best_weight,

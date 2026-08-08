@@ -10,6 +10,10 @@ import {
   isCardio,
   formatDistanceKm,
   getSetPRFlags,
+  formatDaysAgo,
+  bestE1RMFromSets,
+  bestRepsFromSets,
+  bestSpeedFromSets,
 } from "../lib/exerciseMetrics";
 
 import styles from "./ExerciseDetail.module.scss";
@@ -47,6 +51,9 @@ export default function ExerciseDetail() {
   const cardio = isCardio(exercise);
   const chartHistory = filterByRange(exercise.history, range);
   const pr = prs[exercise.id];
+  const currentE1RM = !cardio ? getCurrentE1RM(exercise.history) : null;
+  const currentTopSetReps =
+    !cardio && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
 
   return (
     <div className={styles.page}>
@@ -64,15 +71,19 @@ export default function ExerciseDetail() {
 
       <div className={styles.stats}>
         <div className={styles.stat}>
-          <span className={styles.statValue}>{grouped.length}</span>
-          <span className={styles.statLabel}>Sessions</span>
-        </div>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>{exercise.history.length}</span>
-          <span className={styles.statLabel}>Total Sets</span>
+          <span className={styles.statValue}>
+            {getLastTrained(exercise.history)}
+          </span>
+          <span className={styles.statLabel}>Last Trained</span>
         </div>
         {cardio ? (
           <>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getCurrentPace(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Current Pace</span>
+            </div>
             <div className={styles.stat}>
               <span className={styles.statValue}>
                 {getBestDistance(exercise.history)}
@@ -88,6 +99,16 @@ export default function ExerciseDetail() {
           </>
         ) : (
           <>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {currentE1RM != null
+                  ? `${currentE1RM}kg`
+                  : (currentTopSetReps ?? "—")}
+              </span>
+              <span className={styles.statLabel}>
+                {currentE1RM != null ? "Current e1RM" : "Current Top Set"}
+              </span>
+            </div>
             <div className={styles.stat}>
               <span className={styles.statValue}>
                 {getBestWeight(exercise.history)}
@@ -192,6 +213,46 @@ function groupBySession(history) {
     map[set.session_id].sets.push(set);
   }
   return Object.values(map);
+}
+
+function getLastTrained(history) {
+  if (!history.length) return "—";
+  const lastDate = history.reduce(
+    (latest, s) => (s.date > latest ? s.date : latest),
+    history[0].date,
+  );
+  return formatDaysAgo(lastDate);
+}
+
+// Sets on the most recent date that has at least one set matching `hasField`
+// — used to scope the "current" stats to today's-most-recent-session-worth
+// of sets, as opposed to the all-time PRs below.
+function mostRecentDaySets(history, hasField) {
+  const matching = history.filter((s) => s[hasField]);
+  if (!matching.length) return [];
+  const lastDate = matching.reduce(
+    (latest, s) => (s.date > latest ? s.date : latest),
+    matching[0].date,
+  );
+  return matching.filter((s) => s.date === lastDate);
+}
+
+// Best e1RM among sets on the most recent date that has a weighted set —
+// "current" strength, as opposed to getBestWeight's all-time PR. Sets
+// without weight_kg (e.g. warm-ups logged as bodyweight) don't count.
+function getCurrentE1RM(history) {
+  return bestE1RMFromSets(mostRecentDaySets(history, "weight_kg"));
+}
+
+// Fallback for exercises with no weighted sets at all (e.g. bodyweight-only)
+// — the best reps on the most recent date, since e1RM doesn't apply.
+function getCurrentTopSetReps(history) {
+  return bestRepsFromSets(mostRecentDaySets(history, "reps"));
+}
+
+function getCurrentPace(history) {
+  const best = bestSpeedFromSets(mostRecentDaySets(history, "speed_kmh"));
+  return best != null ? `${best}km/h` : "—";
 }
 
 function getBestWeight(history) {

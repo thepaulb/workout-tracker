@@ -28,7 +28,44 @@ router.get("/bests", (req, res) => {
   `,
     )
     .all(req.user.id);
-  res.json(rows);
+
+  // Raw sets from each exercise's most recent session date, so the client
+  // can compute "current" stats (e1RM etc) using the same shared logic
+  // that already exists there, rather than duplicating the e1RM formula
+  // in SQL. RANK (not ROW_NUMBER) so a multi-session day keeps all its sets.
+  const recentSets = db
+    .prepare(
+      `
+    SELECT exercise_id, weight_kg, reps, rpe, speed_kmh
+    FROM (
+      SELECT st.exercise_id, st.weight_kg, st.reps, st.rpe, st.speed_kmh,
+        RANK() OVER (PARTITION BY st.exercise_id ORDER BY s.date DESC) AS rnk
+      FROM sets st
+      JOIN sessions s ON s.id = st.session_id
+      WHERE s.user_id = ?
+    )
+    WHERE rnk = 1
+  `,
+    )
+    .all(req.user.id);
+
+  const recentSetsByExercise = {};
+  for (const s of recentSets) {
+    if (!recentSetsByExercise[s.exercise_id]) recentSetsByExercise[s.exercise_id] = [];
+    recentSetsByExercise[s.exercise_id].push({
+      weight_kg: s.weight_kg,
+      reps: s.reps,
+      rpe: s.rpe,
+      speed_kmh: s.speed_kmh,
+    });
+  }
+
+  res.json(
+    rows.map((r) => ({
+      ...r,
+      recent_sets: recentSetsByExercise[r.id] ?? [],
+    })),
+  );
 });
 
 // GET PR lookup map — { exerciseId: { best_weight, best_reps } }

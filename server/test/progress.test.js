@@ -47,6 +47,40 @@ describe("GET /api/progress/bests", () => {
       .set("Cookie", cookie);
     expect(res.body.map((r) => r.name)).toEqual(["Squat", "Bench Press"]);
   });
+
+  it("includes recent_sets from only the most recent session date", async () => {
+    const older = seedSession(user.id, { date: "2026-01-05" });
+    const newer = seedSession(user.id, { date: "2026-01-10" });
+    seedSet(older, bench, { setNumber: 1, reps: 5, weightKg: 90 });
+    seedSet(newer, bench, { setNumber: 1, reps: 5, weightKg: 100, rpe: 8 });
+    seedSet(newer, bench, { setNumber: 2, reps: 3, weightKg: 110, rpe: 9 });
+
+    const res = await request(app)
+      .get("/api/progress/bests")
+      .set("Cookie", cookie);
+    const row = res.body.find((r) => r.name === "Bench Press");
+    expect(row.recent_sets).toHaveLength(2);
+    expect(row.recent_sets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ weight_kg: 100, reps: 5, rpe: 8 }),
+        expect.objectContaining({ weight_kg: 110, reps: 3, rpe: 9 }),
+      ]),
+    );
+  });
+
+  it("includes recent_sets from every session on a multi-session most-recent date", async () => {
+    const am = seedSession(user.id, { date: "2026-01-10" });
+    const pm = seedSession(user.id, { date: "2026-01-10" });
+    seedSet(am, bench, { setNumber: 1, reps: 5, weightKg: 90 });
+    seedSet(pm, bench, { setNumber: 1, reps: 5, weightKg: 95 });
+
+    const res = await request(app)
+      .get("/api/progress/bests")
+      .set("Cookie", cookie);
+    const row = res.body.find((r) => r.name === "Bench Press");
+    expect(row.recent_sets).toHaveLength(2);
+  });
+
 });
 
 describe("GET /api/progress/prs", () => {

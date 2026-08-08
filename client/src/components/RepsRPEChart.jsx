@@ -14,11 +14,12 @@ import styles from "./RepsRPEChart.module.scss";
 
 const BAR_WIDTH = 10;
 
-// RPE (line, left axis) and reps (bar, right axis) for the same top set
-// (the day's heaviest set) — a strict 1:1 pairing, not "RPE of the top
-// set" next to "total reps for the whole day". A day only gets a point at
-// all if that top set has an RPE logged, so this is sparser than a plain
-// reps chart: no RPE that day means nothing to plot, not a zero-height bar.
+// RPE (line, left axis) and reps (bar, right axis) for the same top set —
+// a 1:1 pairing, not "RPE of the top set" next to "total reps for the
+// whole day". The reps bar shows on every date with a set to plot, RPE
+// logged or not, so this stays useful even when RPE isn't tracked; the
+// RPE line only draws a point where it was — real gaps, not interpolated
+// across days with no RPE.
 export default function RepsRPEChart({ history }) {
   const data = buildChartData(history);
   if (!data.length) return null;
@@ -94,7 +95,6 @@ export default function RepsRPEChart({ history }) {
             strokeWidth={2}
             dot={{ fill: "#f97058", r: 3, strokeWidth: 0 }}
             activeDot={{ fill: "#f97058", r: 5, strokeWidth: 0 }}
-            connectNulls
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -108,36 +108,52 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{formatFullDate(d.date)}</div>
-      <div className={styles.tooltipRpe}>RPE {d.rpe}</div>
+      {d.rpe != null && (
+        <div className={styles.tooltipRpe}>RPE {d.rpe}</div>
+      )}
       <div className={styles.tooltipReps}>{d.topSetReps} reps</div>
-      <div className={styles.tooltipSets}>top set {d.topWeight}kg</div>
+      {d.topWeight != null && (
+        <div className={styles.tooltipSets}>top set {d.topWeight}kg</div>
+      )}
     </div>
   );
 }
 
-// For each date, find the set with the highest weight (the "top set")
-// across all of that day's sessions — a day can have multiple sessions
-// (e.g. AM/PM), and they should still collapse into one chart point.
-// Dates where the top set has no rpe logged are skipped entirely — reps
-// and RPE describe the same set, so there's nothing to plot without both.
+// For each date, find the "top set" across all of that day's sessions (a
+// day can have multiple sessions, e.g. AM/PM, and they should still
+// collapse into one chart point). If any set that day has weight_kg, the
+// top set is the heaviest of those — matching the weight-based PRs
+// elsewhere in the app. If none do (a bodyweight-only day, e.g. Pull-up
+// with no added weight), the top set falls back to the highest-reps set
+// instead, so RPE logged on a bodyweight set isn't invisible just because
+// there's no weight to rank it by.
 export function buildChartData(history) {
   const byDate = {};
 
   for (const set of history) {
-    if (!set.weight_kg) continue;
-    const current = byDate[set.date];
-    if (!current || set.weight_kg > current.topWeight) {
-      byDate[set.date] = {
-        date: set.date,
-        topWeight: set.weight_kg,
-        topSetReps: set.reps ?? null,
-        rpe: set.rpe ?? null,
-      };
-    }
+    if (!set.reps && !set.weight_kg) continue;
+    if (!byDate[set.date]) byDate[set.date] = [];
+    byDate[set.date].push(set);
   }
 
-  return Object.values(byDate)
-    .filter((s) => s.rpe != null)
+  return Object.entries(byDate)
+    .map(([date, sets]) => {
+      const weighted = sets.filter((s) => s.weight_kg);
+      const topSet = weighted.length
+        ? weighted.reduce((best, s) =>
+            s.weight_kg > best.weight_kg ? s : best,
+          )
+        : sets.reduce((best, s) =>
+            (s.reps ?? 0) > (best.reps ?? 0) ? s : best,
+          );
+
+      return {
+        date,
+        topWeight: topSet.weight_kg ?? null,
+        topSetReps: topSet.reps ?? null,
+        rpe: topSet.rpe ?? null,
+      };
+    })
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
