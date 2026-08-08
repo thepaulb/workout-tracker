@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getExercise } from "../api/exercises";
 import { getPRs } from "../api/progress";
 import WeightChart from "../components/WeightChart";
-import RepsChart from "../components/RepsChart";
-import RPEChart from "../components/RPEChart";
+import RepsRPEChart from "../components/RepsRPEChart";
 import PRBadge from "../components/PRBadge";
 import {
   formatSet,
@@ -126,8 +125,7 @@ export default function ExerciseDetail() {
           </div>
 
           <WeightChart history={chartHistory} />
-          <RepsChart history={chartHistory} />
-          <RPEChart history={chartHistory} />
+          <RepsRPEChart history={chartHistory} />
         </>
       )}
 
