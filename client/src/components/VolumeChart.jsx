@@ -7,9 +7,11 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { makeDateTick } from "../lib/DateAxisTick";
+import { weeklyDateAxis } from "../lib/DateAxisTick";
 import { niceZeroDomain } from "../lib/niceAxis";
 import styles from "./VolumeChart.module.scss";
+
+const BAR_WIDTH = 14;
 
 export default function VolumeChart({ data }) {
   if (!data.length) return null;
@@ -21,6 +23,13 @@ export default function VolumeChart({ data }) {
   const { domain: volumeDomain, ticks: volumeTicks } = niceZeroDomain(
     Math.max(...formatted.map((d) => d.volume_tonnes))
   );
+  const {
+    data: chartData,
+    xKey: dateKey,
+    domain: dateDomain,
+    ticks: dateTicks,
+    tick: DateTick,
+  } = weeklyDateAxis(formatted, "week_start");
 
   return (
     <div className={styles.wrapper}>
@@ -30,7 +39,7 @@ export default function VolumeChart({ data }) {
       </div>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart
-          data={formatted}
+          data={chartData}
           margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
@@ -39,11 +48,14 @@ export default function VolumeChart({ data }) {
             vertical={false}
           />
           <XAxis
-            dataKey="week_start"
-            tick={makeDateTick(formatted, "week_start")}
+            dataKey={dateKey}
+            type="number"
+            domain={dateDomain}
+            ticks={dateTicks}
+            tick={DateTick}
             axisLine={false}
             tickLine={false}
-            interval="preserveStartEnd"
+            interval={0}
             height={34}
           />
           <YAxis
@@ -60,6 +72,7 @@ export default function VolumeChart({ data }) {
             fill="#f5a623"
             fillOpacity={0.85}
             radius={[4, 4, 0, 0]}
+            barSize={BAR_WIDTH}
           />
         </BarChart>
       </ResponsiveContainer>

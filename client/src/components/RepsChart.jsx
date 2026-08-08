@@ -7,19 +7,29 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { makeDateTick } from "../lib/DateAxisTick";
+import { weeklyDateAxis } from "../lib/DateAxisTick";
 import styles from "./RepsChart.module.scss";
+
+const BAR_WIDTH = 10;
 
 export default function RepsChart({ history }) {
   const data = buildChartData(history);
   if (!data.length) return null;
+
+  const {
+    data: chartData,
+    xKey: dateKey,
+    domain: dateDomain,
+    ticks: dateTicks,
+    tick: DateTick,
+  } = weeklyDateAxis(data);
 
   return (
     <div className={styles.wrapper}>
       <h2 className={styles.title}>Reps Progression</h2>
       <ResponsiveContainer width="100%" height={240}>
         <BarChart
-          data={data}
+          data={chartData}
           margin={{ top: 8, right: 16, bottom: 4, left: 0 }}
         >
           <CartesianGrid
@@ -28,10 +38,14 @@ export default function RepsChart({ history }) {
             vertical={false}
           />
           <XAxis
-            dataKey="date"
-            tick={makeDateTick(data)}
+            dataKey={dateKey}
+            type="number"
+            domain={dateDomain}
+            ticks={dateTicks}
+            tick={DateTick}
             axisLine={false}
             tickLine={false}
+            interval={0}
             height={34}
           />
           <YAxis
@@ -47,6 +61,7 @@ export default function RepsChart({ history }) {
             fill="#3ecf8e"
             fillOpacity={0.85}
             radius={[4, 4, 0, 0]}
+            barSize={BAR_WIDTH}
           />
         </BarChart>
       </ResponsiveContainer>
