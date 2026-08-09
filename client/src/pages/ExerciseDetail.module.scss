@@ -46,6 +46,21 @@
   font-family: $font-mono;
 }
 
+.relatedTag {
+  background: transparent;
+  border: 1px solid $color-primary;
+  border-radius: $radius;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  color: $color-primary;
+  font-family: $font-mono;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba($color-primary, 0.1);
+  }
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

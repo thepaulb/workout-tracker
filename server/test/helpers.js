@@ -49,12 +49,14 @@ export function seedExercise(fields = {}) {
     category = "push",
     equipment = "barbell",
     notes = null,
+    progressionType = "reps",
+    relatedExerciseId = null,
   } = fields;
   const { lastInsertRowid } = db
     .prepare(
-      "INSERT INTO exercises (name, category, equipment, notes) VALUES (?, ?, ?, ?)",
+      "INSERT INTO exercises (name, category, equipment, notes, progression_type, related_exercise_id) VALUES (?, ?, ?, ?, ?, ?)",
     )
-    .run(name, category, equipment, notes);
+    .run(name, category, equipment, notes, progressionType, relatedExerciseId);
   return Number(lastInsertRowid);
 }
 

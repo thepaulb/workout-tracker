@@ -49,9 +49,10 @@ export default function ExerciseDetail() {
 
   const grouped = groupBySession(exercise.history).reverse();
   const cardio = isCardio(exercise);
+  const isWeighted = exercise.progression_type === "weight";
   const chartHistory = filterByRange(exercise.history, range);
   const pr = prs[exercise.id];
-  const currentE1RM = !cardio ? getCurrentE1RM(exercise.history) : null;
+  const currentE1RM = !cardio && isWeighted ? getCurrentE1RM(exercise.history) : null;
   const currentTopSetReps =
     !cardio && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
 
@@ -66,6 +67,14 @@ export default function ExerciseDetail() {
         <div className={styles.tags}>
           <span className={styles.tag}>{exercise.category}</span>
           <span className={styles.tag}>{exercise.equipment}</span>
+          {exercise.related_exercise && (
+            <button
+              className={styles.relatedTag}
+              onClick={() => navigate(`/exercises/${exercise.related_exercise.id}`)}
+            >
+              ↔ {exercise.related_exercise.name}
+            </button>
+          )}
         </div>
       </header>
 
@@ -109,12 +118,14 @@ export default function ExerciseDetail() {
                 {currentE1RM != null ? "Current e1RM" : "Current Top Set"}
               </span>
             </div>
-            <div className={styles.stat}>
-              <span className={styles.statValue}>
-                {getBestWeight(exercise.history)}
-              </span>
-              <span className={styles.statLabel}>Best Weight</span>
-            </div>
+            {isWeighted && (
+              <div className={styles.stat}>
+                <span className={styles.statValue}>
+                  {getBestWeight(exercise.history)}
+                </span>
+                <span className={styles.statLabel}>Best Weight</span>
+              </div>
+            )}
             <div className={styles.stat}>
               <span className={styles.statValue}>
                 {getBestReps(exercise.history)}
@@ -145,7 +156,7 @@ export default function ExerciseDetail() {
             ))}
           </div>
 
-          <WeightChart history={chartHistory} />
+          {isWeighted && <WeightChart history={chartHistory} />}
           <RepsRPEChart history={chartHistory} />
         </>
       )}

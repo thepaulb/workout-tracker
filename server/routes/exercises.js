@@ -21,6 +21,12 @@ router.get("/:id", (req, res) => {
     .get(req.params.id);
   if (!exercise) return res.status(404).json({ error: "Exercise not found" });
 
+  exercise.related_exercise = exercise.related_exercise_id
+    ? db
+        .prepare("SELECT id, name FROM exercises WHERE id = ?")
+        .get(exercise.related_exercise_id)
+    : null;
+
   exercise.history = db
     .prepare(
       `
@@ -38,7 +44,8 @@ router.get("/:id", (req, res) => {
 
 // POST new exercise
 router.post("/", (req, res) => {
-  const { name, category, equipment, notes } = req.body;
+  const { name, category, equipment, notes, progression_type, related_exercise_id } =
+    req.body;
   if (!name || !category || !equipment) {
     return res
       .status(400)
@@ -48,10 +55,18 @@ router.post("/", (req, res) => {
   const result = db
     .prepare(
       `
-    INSERT INTO exercises (name, category, equipment, notes) VALUES (?, ?, ?, ?)
+    INSERT INTO exercises (name, category, equipment, notes, progression_type, related_exercise_id)
+    VALUES (?, ?, ?, ?, ?, ?)
   `,
     )
-    .run(name, category, equipment, notes ?? null);
+    .run(
+      name,
+      category,
+      equipment,
+      notes ?? null,
+      progression_type ?? "reps",
+      related_exercise_id ?? null,
+    );
 
   res.status(201).json({ id: result.lastInsertRowid });
 });
@@ -63,14 +78,23 @@ router.patch("/:id", (req, res) => {
     .get(req.params.id);
   if (!exercise) return res.status(404).json({ error: "Exercise not found" });
 
-  const { name, category, equipment, notes } = req.body;
+  const {
+    name,
+    category,
+    equipment,
+    notes,
+    progression_type,
+    related_exercise_id,
+  } = req.body;
   db.prepare(
     `
     UPDATE exercises SET
-      name      = COALESCE(?, name),
-      category  = COALESCE(?, category),
-      equipment = COALESCE(?, equipment),
-      notes     = COALESCE(?, notes)
+      name                 = COALESCE(?, name),
+      category             = COALESCE(?, category),
+      equipment            = COALESCE(?, equipment),
+      notes                = COALESCE(?, notes),
+      progression_type     = COALESCE(?, progression_type),
+      related_exercise_id  = COALESCE(?, related_exercise_id)
     WHERE id = ?
   `,
   ).run(
@@ -78,6 +102,8 @@ router.patch("/:id", (req, res) => {
     category ?? null,
     equipment ?? null,
     notes ?? null,
+    progression_type ?? null,
+    related_exercise_id ?? null,
     req.params.id,
   );
 
