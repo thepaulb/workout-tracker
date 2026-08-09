@@ -48,7 +48,24 @@
   margin-bottom: 0.15rem;
 }
 
-.tooltipSets {
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.7rem;
   color: $color-muted;
+}
+
+.legendSwatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

@@ -74,6 +74,7 @@ export default function WeightChart({ history }) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
+            align="left"
             wrapperStyle={{ fontSize: "0.75rem", color: "#6b6e74" }}
           />
           <ReferenceLine

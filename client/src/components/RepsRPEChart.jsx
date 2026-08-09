@@ -1,40 +1,54 @@
 import {
   ResponsiveContainer,
   ComposedChart,
-  Line,
-  Bar,
+  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
 import { weeklyDateAxis } from "../lib/DateAxisTick";
+import { niceZeroDomain } from "../lib/niceAxis";
 import styles from "./RepsRPEChart.module.scss";
 
-const BAR_WIDTH = 10;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const JITTER_DAY_FRACTION = 0.15; // keeps a date's dots inside its own column
 
-// RPE (line, left axis) and reps (bar, right axis) for the same top set —
-// a 1:1 pairing, not "RPE of the top set" next to "total reps for the
-// whole day". The reps bar shows on every date with a set to plot, RPE
-// logged or not, so this stays useful even when RPE isn't tracked; the
-// RPE line only draws a point where it was — real gaps, not interpolated
-// across days with no RPE.
+const RPE_MIN = 6;
+const RPE_MAX = 10;
+const RPE_LOW_RGB = [62, 207, 142]; // $color-green — matches the low end of the scale
+const RPE_HIGH_RGB = [249, 112, 88]; // $color-coral — matches the high end
+const NO_RPE_COLOR = "#54575e";
+
+// Strip plot: every set gets its own dot at its rep count, instead of
+// collapsing a day down to one "top set". Dots for the same date are
+// spread with a small horizontal jitter so ties (e.g. two sets of 10)
+// don't sit exactly on top of each other. RPE, when logged, tints the
+// dot along a green (easy) -> coral (max effort) gradient; sets with no
+// RPE logged get a neutral grey rather than disappearing.
 export default function RepsRPEChart({ history }) {
-  const data = buildChartData(history);
-  if (!data.length) return null;
+  const jittered = withJitter(buildChartData(history));
+  if (!jittered.length) return null;
 
   const {
-    data: chartData,
+    data: dateJoined,
     xKey: dateKey,
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(data);
+  } = weeklyDateAxis(jittered);
+
+  const chartData = dateJoined.map((d) => ({
+    ...d,
+    [dateKey]: d[dateKey] + d.jitterDays * DAY_MS,
+  }));
+
+  const maxReps = Math.max(...chartData.map((d) => d.reps));
+  const { domain: repsDomain, ticks: repsTicks } = niceZeroDomain(maxReps);
 
   return (
     <div className={styles.wrapper}>
-      <h2 className={styles.title}>Reps & RPE at Top Set</h2>
+      <h2 className={styles.title}>Reps per Set</h2>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart
           data={chartData}
@@ -57,49 +71,47 @@ export default function RepsRPEChart({ history }) {
             height={34}
           />
           <YAxis
-            yAxisId="rpe"
-            orientation="left"
-            domain={[6, 10]}
-            ticks={[6, 7, 8, 9, 10]}
+            dataKey="reps"
+            domain={repsDomain}
+            ticks={repsTicks}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
             axisLine={false}
             tickLine={false}
-            width={32}
-          />
-          <YAxis
-            yAxisId="reps"
-            orientation="right"
-            tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
-            axisLine={false}
-            tickLine={false}
-            width={32}
             allowDecimals={false}
+            width={32}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend wrapperStyle={{ fontSize: "0.75rem", color: "#6b6e74" }} />
-          <Bar
-            yAxisId="reps"
-            dataKey="topSetReps"
-            name="Reps"
-            fill="#3ecf8e"
-            fillOpacity={0.85}
-            radius={[4, 4, 0, 0]}
-            barSize={BAR_WIDTH}
-          />
-          <Line
-            yAxisId="rpe"
-            type="monotone"
-            dataKey="rpe"
-            name="RPE"
-            stroke="#f97058"
-            strokeWidth={2}
-            dot={{ fill: "#f97058", r: 3, strokeWidth: 0 }}
-            activeDot={{ fill: "#f97058", r: 5, strokeWidth: 0 }}
-          />
+          <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: "3 3" }} />
+          <Scatter data={chartData} dataKey="reps" shape={RepDot} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>
+      <div className={styles.legend}>
+        <span className={styles.legendItem}>
+          <span className={styles.legendSwatch} style={{ background: rpeColor(RPE_MIN) }} />
+          RPE {RPE_MIN}
+        </span>
+        <span className={styles.legendItem}>
+          <span className={styles.legendSwatch} style={{ background: rpeColor(RPE_MAX) }} />
+          RPE {RPE_MAX}
+        </span>
+        <span className={styles.legendItem}>
+          <span className={styles.legendSwatch} style={{ background: NO_RPE_COLOR }} />
+          No RPE logged
+        </span>
+      </div>
     </div>
   );
+}
+
+function RepDot({ cx, cy, payload }) {
+  if (cx == null || cy == null) return null;
+  return <circle cx={cx} cy={cy} r={4} fill={rpeColor(payload.rpe)} fillOpacity={0.85} />;
+}
+
+function rpeColor(rpe) {
+  if (rpe == null) return NO_RPE_COLOR;
+  const t = Math.min(1, Math.max(0, (rpe - RPE_MIN) / (RPE_MAX - RPE_MIN)));
+  const [r, g, b] = RPE_LOW_RGB.map((c, i) => Math.round(c + (RPE_HIGH_RGB[i] - c) * t));
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 function CustomTooltip({ active, payload }) {
@@ -108,53 +120,34 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{formatFullDate(d.date)}</div>
-      {d.rpe != null && (
-        <div className={styles.tooltipRpe}>RPE {d.rpe}</div>
-      )}
-      <div className={styles.tooltipReps}>{d.topSetReps} reps</div>
-      {d.topWeight != null && (
-        <div className={styles.tooltipSets}>top set {d.topWeight}kg</div>
-      )}
+      <div className={styles.tooltipReps}>{d.reps} reps</div>
+      {d.rpe != null && <div className={styles.tooltipRpe}>RPE {d.rpe}</div>}
     </div>
   );
 }
 
-// For each date, find the "top set" across all of that day's sessions (a
-// day can have multiple sessions, e.g. AM/PM, and they should still
-// collapse into one chart point). If any set that day has weight_kg, the
-// top set is the heaviest of those — matching the weight-based PRs
-// elsewhere in the app. If none do (a bodyweight-only day, e.g. Pull-up
-// with no added weight), the top set falls back to the highest-reps set
-// instead, so RPE logged on a bodyweight set isn't invisible just because
-// there's no weight to rank it by.
+// One row per individual set — reps position the dot, date places it on
+// the x-axis. Sets without reps logged have nothing to plot.
 export function buildChartData(history) {
-  const byDate = {};
-
-  for (const set of history) {
-    if (!set.reps && !set.weight_kg) continue;
-    if (!byDate[set.date]) byDate[set.date] = [];
-    byDate[set.date].push(set);
-  }
-
-  return Object.entries(byDate)
-    .map(([date, sets]) => {
-      const weighted = sets.filter((s) => s.weight_kg);
-      const topSet = weighted.length
-        ? weighted.reduce((best, s) =>
-            s.weight_kg > best.weight_kg ? s : best,
-          )
-        : sets.reduce((best, s) =>
-            (s.reps ?? 0) > (best.reps ?? 0) ? s : best,
-          );
-
-      return {
-        date,
-        topWeight: topSet.weight_kg ?? null,
-        topSetReps: topSet.reps ?? null,
-        rpe: topSet.rpe ?? null,
-      };
-    })
+  return history
+    .filter((s) => s.reps)
+    .map((s) => ({ date: s.date, reps: s.reps, rpe: s.rpe ?? null }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// Spreads same-date dots evenly around their date so a day with several
+// sets doesn't stack them into one indistinguishable blob.
+function withJitter(data) {
+  const byDate = {};
+  for (const d of data) {
+    (byDate[d.date] ??= []).push(d);
+  }
+  return Object.values(byDate).flatMap((sets) =>
+    sets.map((s, i) => ({
+      ...s,
+      jitterDays: (i - (sets.length - 1) / 2) * JITTER_DAY_FRACTION,
+    })),
+  );
 }
 
 function formatFullDate(dateStr) {
