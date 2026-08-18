@@ -81,6 +81,29 @@ describe("GET /api/progress/bests", () => {
     expect(row.recent_sets).toHaveLength(2);
   });
 
+  it("computes best_duration for a timed (isometric) exercise", async () => {
+    const hollow = seedExercise({
+      name: "Hollow",
+      category: "core",
+      equipment: "bodyweight",
+      progressionType: "time",
+    });
+    seedSet(sid, hollow, { setNumber: 1, reps: 1, durationMin: 1 });
+    seedSet(sid, hollow, { setNumber: 2, reps: 1, durationMin: 1.5 });
+
+    const res = await request(app)
+      .get("/api/progress/bests")
+      .set("Cookie", cookie);
+    const row = res.body.find((r) => r.name === "Hollow");
+    expect(row).toMatchObject({ progression_type: "time", best_duration: 1.5 });
+    expect(row.recent_sets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ duration_min: 1 }),
+        expect.objectContaining({ duration_min: 1.5 }),
+      ]),
+    );
+  });
+
 });
 
 describe("GET /api/progress/prs", () => {
@@ -90,6 +113,27 @@ describe("GET /api/progress/prs", () => {
       .get("/api/progress/prs")
       .set("Cookie", cookie);
     expect(res.status).toBe(200);
-    expect(res.body[bench]).toEqual({ best_weight: 110, best_reps: 6 });
+    expect(res.body[bench]).toEqual({
+      best_weight: 110,
+      best_reps: 6,
+      best_distance: null,
+      best_speed: null,
+      best_duration: null,
+    });
+  });
+
+  it("returns best_duration for a timed exercise", async () => {
+    const hollow = seedExercise({
+      name: "Hollow",
+      category: "core",
+      equipment: "bodyweight",
+      progressionType: "time",
+    });
+    seedSet(sid, hollow, { setNumber: 1, reps: 1, durationMin: 1.5 });
+
+    const res = await request(app)
+      .get("/api/progress/prs")
+      .set("Cookie", cookie);
+    expect(res.body[hollow].best_duration).toBe(1.5);
   });
 });

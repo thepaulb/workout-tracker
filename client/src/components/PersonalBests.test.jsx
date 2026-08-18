@@ -87,4 +87,24 @@ describe("PersonalBests", () => {
     expect(screen.queryByText("Weighted")).not.toBeInTheDocument();
     expect(screen.getByText("Bodyweight")).toBeInTheDocument();
   });
+
+  it("groups a timed (isometric) exercise separately, showing hold time not reps", () => {
+    const timed = [
+      {
+        id: 4,
+        name: "Hollow",
+        progression_type: "time",
+        best_reps: 1,
+        best_duration: 1.5,
+        last_session: "2026-03-15",
+        recent_sets: [{ reps: 1, duration_min: 1.25, rpe: null }],
+      },
+    ];
+    renderBests(timed);
+    expect(screen.getByText("Timed")).toBeInTheDocument();
+    expect(screen.getByText("Hollow")).toBeInTheDocument();
+    expect(screen.getByText("1:30")).toBeInTheDocument(); // best hold
+    expect(screen.getByText("1:15")).toBeInTheDocument(); // current hold
+    expect(screen.queryByText("Bodyweight")).not.toBeInTheDocument();
+  });
 });

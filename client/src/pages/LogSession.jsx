@@ -53,7 +53,7 @@ export default function LogSession() {
     const last = await getLastSet(exercise.id);
     setLastSet(last);
     setForm({
-      reps: "",
+      reps: exercise.progression_type === "time" ? "1" : "",
       weight_kg: last?.weight_kg ?? "",
       rest_min: "",
       distance_km: "",
@@ -65,9 +65,11 @@ export default function LogSession() {
   }
 
   const cardio = isCardio(selectedExercise);
+  const timed = selectedExercise?.progression_type === "time";
   const currentPR = selectedExercise ? prs[selectedExercise.id] : null;
 
-  const durationMin = cardio && form.time_str ? clockToMinutes(form.time_str) : null;
+  const durationMin =
+    (cardio || timed) && form.time_str ? clockToMinutes(form.time_str) : null;
   const distanceM = cardio && form.distance_km ? parseFloat(form.distance_km) * 1000 : null;
   const speedKmh = cardio
     ? computeSpeedKmh(parseFloat(form.distance_km) || null, durationMin)
@@ -75,19 +77,28 @@ export default function LogSession() {
 
   const isWeightPR =
     !cardio &&
+    !timed &&
     currentPR &&
     form.weight_kg &&
     parseFloat(form.weight_kg) >= currentPR.best_weight;
   const isRepsPR =
-    !cardio && currentPR && form.reps && parseInt(form.reps) >= currentPR.best_reps;
+    !cardio &&
+    !timed &&
+    currentPR &&
+    form.reps &&
+    parseInt(form.reps) >= currentPR.best_reps;
   const isDistancePR =
     cardio && currentPR && distanceM && distanceM >= currentPR.best_distance;
   const isPacePR =
     cardio && currentPR && speedKmh && speedKmh >= currentPR.best_speed;
-  const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR;
+  const isDurationPR =
+    timed && currentPR && durationMin && durationMin >= currentPR.best_duration;
+  const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR || isDurationPR;
 
   async function handleLogSet() {
-    if (cardio ? !form.distance_km || !form.time_str : !form.reps) return;
+    if (cardio && (!form.distance_km || !form.time_str)) return;
+    if (timed && !form.time_str) return;
+    if (!cardio && !timed && !form.reps) return;
     setSaving(true);
     try {
       const setsForExercise = session.sets.filter(
@@ -104,17 +115,29 @@ export default function LogSession() {
             notes: form.notes || null,
             is_ladder: false,
           }
-        : {
-            session_id: parseInt(id),
-            exercise_id: selectedExercise.id,
-            set_number: setsForExercise.length + 1,
-            reps: parseInt(form.reps),
-            weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-            rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
-            notes: form.notes || null,
-            is_ladder: false,
-            rpe: form.rpe,
-          };
+        : timed
+          ? {
+              session_id: parseInt(id),
+              exercise_id: selectedExercise.id,
+              set_number: setsForExercise.length + 1,
+              reps: form.reps ? parseInt(form.reps) : 1,
+              duration_min: durationMin,
+              rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
+              notes: form.notes || null,
+              is_ladder: false,
+              rpe: form.rpe,
+            }
+          : {
+              session_id: parseInt(id),
+              exercise_id: selectedExercise.id,
+              set_number: setsForExercise.length + 1,
+              reps: parseInt(form.reps),
+              weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+              rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
+              notes: form.notes || null,
+              is_ladder: false,
+              rpe: form.rpe,
+            };
       await createSet(payload);
       const updated = await getSession(id);
       await checkGoals(selectedExercise.id);
@@ -122,7 +145,9 @@ export default function LogSession() {
       setForm((f) =>
         cardio
           ? { ...f, distance_km: "", time_str: "", notes: "" }
-          : { ...f, reps: "", notes: "", rpe: null },
+          : timed
+            ? { ...f, reps: "1", time_str: "", notes: "", rpe: null }
+            : { ...f, reps: "", notes: "", rpe: null },
       );
     } finally {
       setSaving(false);
@@ -304,6 +329,67 @@ export default function LogSession() {
                   />
                 </div>
               </>
+            ) : timed ? (
+              <>
+                <div className={styles.logInputs}>
+                  <div className={styles.logField}>
+                    <label>Time (mm:ss)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0:00"
+                      value={form.time_str}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, time_str: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={styles.logField}>
+                    <label>Reps</label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="1"
+                      value={form.reps}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, reps: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.logInputs}>
+                  <div className={styles.logField}>
+                    <label>Rest (min)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.5"
+                      placeholder="0"
+                      value={form.rest_min}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, rest_min: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={styles.logField}>
+                    <label>Notes</label>
+                    <input
+                      type="text"
+                      placeholder="Optional"
+                      value={form.notes}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, notes: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <RPEInput
+                  value={form.rpe}
+                  onChange={(rpe) => setForm((f) => ({ ...f, rpe }))}
+                />
+              </>
             ) : (
               <>
                 <div className={styles.logInputs}>
@@ -374,6 +460,7 @@ export default function LogSession() {
                 {isRepsPR && `Reps: ${form.reps}`}
                 {isDistancePR && `Distance: ${form.distance_km}km`}{" "}
                 {isPacePR && `Pace: ${speedKmh}km/h`}
+                {isDurationPR && `Time: ${form.time_str}`}
               </div>
             )}
 
@@ -383,7 +470,11 @@ export default function LogSession() {
                 onClick={handleLogSet}
                 disabled={
                   saving ||
-                  (cardio ? !form.distance_km || !form.time_str : !form.reps)
+                  (cardio
+                    ? !form.distance_km || !form.time_str
+                    : timed
+                      ? !form.time_str
+                      : !form.reps)
                 }
               >
                 {saving ? "Logging..." : isPR ? "🏆 Log PR" : "Log Set"}

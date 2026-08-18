@@ -14,7 +14,7 @@ CREATE TABLE exercises (
     category             TEXT    NOT NULL,   -- pull | push | compound | core | conditioning | olympic | kettlebell | skill
     equipment            TEXT    NOT NULL,   -- bodyweight | barbell | kettlebell | dumbbell | machine | cable
     notes                TEXT,
-    progression_type     TEXT    NOT NULL DEFAULT 'reps',  -- weight | reps | pace — which chart/stat set the client shows
+    progression_type     TEXT    NOT NULL DEFAULT 'reps',  -- weight | reps | pace | time — which chart/stat set the client shows
     related_exercise_id  INTEGER REFERENCES exercises(id) ON DELETE SET NULL  -- e.g. links "Pull-up" <-> "Weighted Pull-up"
 );
 

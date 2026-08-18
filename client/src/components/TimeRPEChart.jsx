@@ -10,18 +10,16 @@ import {
 import { weeklyDateAxis } from "../lib/DateAxisTick";
 import { niceZeroDomain } from "../lib/niceAxis";
 import { RPE_MIN, RPE_MAX, NO_RPE_COLOR, rpeColor } from "../lib/rpeColor";
+import { minutesToClock } from "../lib/exerciseMetrics";
 import styles from "./RepsRPEChart.module.scss";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const JITTER_DAY_FRACTION = 0.15; // keeps a date's dots inside its own column
 
-// Strip plot: every set gets its own dot at its rep count, instead of
-// collapsing a day down to one "top set". Dots for the same date are
-// spread with a small horizontal jitter so ties (e.g. two sets of 10)
-// don't sit exactly on top of each other. RPE, when logged, tints the
-// dot along a green (easy) -> coral (max effort) gradient; sets with no
-// RPE logged get a neutral grey rather than disappearing.
-export default function RepsRPEChart({ history }) {
+// Same strip-plot pattern as RepsRPEChart, but for isometric holds: each
+// set gets a dot at its hold time instead of its rep count, since reps are
+// ~always 1 for a timed exercise and aren't worth plotting.
+export default function TimeRPEChart({ history }) {
   const jittered = withJitter(buildChartData(history));
   if (!jittered.length) return null;
 
@@ -38,12 +36,12 @@ export default function RepsRPEChart({ history }) {
     [dateKey]: d[dateKey] + d.jitterDays * DAY_MS,
   }));
 
-  const maxReps = Math.max(...chartData.map((d) => d.reps));
-  const { domain: repsDomain, ticks: repsTicks } = niceZeroDomain(maxReps);
+  const maxDuration = Math.max(...chartData.map((d) => d.duration));
+  const { domain: durationDomain, ticks: durationTicks } = niceZeroDomain(maxDuration);
 
   return (
     <div className={styles.wrapper}>
-      <h2 className={styles.title}>Reps per Set</h2>
+      <h2 className={styles.title}>Hold Time per Set</h2>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart
           data={chartData}
@@ -66,17 +64,17 @@ export default function RepsRPEChart({ history }) {
             height={34}
           />
           <YAxis
-            dataKey="reps"
-            domain={repsDomain}
-            ticks={repsTicks}
+            dataKey="duration"
+            domain={durationDomain}
+            ticks={durationTicks}
             tick={{ fill: "#6b6e74", fontSize: 11, fontFamily: "inherit" }}
+            tickFormatter={minutesToClock}
             axisLine={false}
             tickLine={false}
-            allowDecimals={false}
-            width={32}
+            width={40}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: "3 3" }} />
-          <Scatter data={chartData} dataKey="reps" shape={RepDot} isAnimationActive={false} />
+          <Scatter data={chartData} dataKey="duration" shape={TimeDot} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>
       <div className={styles.legend}>
@@ -97,7 +95,7 @@ export default function RepsRPEChart({ history }) {
   );
 }
 
-function RepDot({ cx, cy, payload }) {
+function TimeDot({ cx, cy, payload }) {
   if (cx == null || cy == null) return null;
   return <circle cx={cx} cy={cy} r={4} fill={rpeColor(payload.rpe)} fillOpacity={0.85} />;
 }
@@ -108,18 +106,18 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{formatFullDate(d.date)}</div>
-      <div className={styles.tooltipReps}>{d.reps} reps</div>
+      <div className={styles.tooltipReps}>{minutesToClock(d.duration)}</div>
       {d.rpe != null && <div className={styles.tooltipRpe}>RPE {d.rpe}</div>}
     </div>
   );
 }
 
-// One row per individual set — reps position the dot, date places it on
-// the x-axis. Sets without reps logged have nothing to plot.
+// One row per individual set — duration positions the dot, date places it
+// on the x-axis. Sets without a duration logged have nothing to plot.
 export function buildChartData(history) {
   return history
-    .filter((s) => s.reps)
-    .map((s) => ({ date: s.date, reps: s.reps, rpe: s.rpe ?? null }))
+    .filter((s) => s.duration_min)
+    .map((s) => ({ date: s.date, duration: s.duration_min, rpe: s.rpe ?? null }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 

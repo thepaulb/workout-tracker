@@ -78,13 +78,14 @@ export function seedSet(sessionId, exerciseId, fields = {}) {
     weightNote = null,
     rpe = null,
     speedKmh = null,
+    durationMin = null,
   } = fields;
   const { lastInsertRowid } = db
     .prepare(
-      `INSERT INTO sets (session_id, exercise_id, set_number, reps, weight_kg, weight_note, rpe, speed_kmh)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO sets (session_id, exercise_id, set_number, reps, weight_kg, weight_note, rpe, speed_kmh, duration_min)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(sessionId, exerciseId, setNumber, reps, weightKg, weightNote, rpe, speedKmh);
+    .run(sessionId, exerciseId, setNumber, reps, weightKg, weightNote, rpe, speedKmh, durationMin);
   return Number(lastInsertRowid);
 }
 

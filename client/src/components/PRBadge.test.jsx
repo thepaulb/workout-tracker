@@ -15,4 +15,10 @@ describe("PRBadge", () => {
     const badge = screen.getByText("PR");
     expect(badge.className).toContain(styles.reps);
   });
+
+  it("uses the duration variant when type='duration'", () => {
+    render(<PRBadge type="duration" />);
+    const badge = screen.getByText("PR");
+    expect(badge.className).toContain(styles.duration);
+  });
 });

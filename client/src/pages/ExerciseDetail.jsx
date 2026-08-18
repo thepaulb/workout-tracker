@@ -4,6 +4,7 @@ import { getExercise } from "../api/exercises";
 import { getPRs } from "../api/progress";
 import WeightChart from "../components/WeightChart";
 import RepsRPEChart from "../components/RepsRPEChart";
+import TimeRPEChart from "../components/TimeRPEChart";
 import PRBadge from "../components/PRBadge";
 import {
   formatSet,
@@ -14,6 +15,8 @@ import {
   bestE1RMFromSets,
   bestRepsFromSets,
   bestSpeedFromSets,
+  bestDurationFromSets,
+  minutesToClock,
 } from "../lib/exerciseMetrics";
 
 import styles from "./ExerciseDetail.module.scss";
@@ -50,11 +53,13 @@ export default function ExerciseDetail() {
   const grouped = groupBySession(exercise.history).reverse();
   const cardio = isCardio(exercise);
   const isWeighted = exercise.progression_type === "weight";
+  const timed = exercise.progression_type === "time";
   const chartHistory = filterByRange(exercise.history, range);
   const pr = prs[exercise.id];
-  const currentE1RM = !cardio && isWeighted ? getCurrentE1RM(exercise.history) : null;
+  const currentE1RM = !cardio && !timed && isWeighted ? getCurrentE1RM(exercise.history) : null;
   const currentTopSetReps =
-    !cardio && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
+    !cardio && !timed && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
+  const currentHoldTime = timed ? getCurrentHoldTime(exercise.history) : null;
 
   return (
     <div className={styles.page}>
@@ -104,6 +109,21 @@ export default function ExerciseDetail() {
                 {getBestPace(exercise.history)}
               </span>
               <span className={styles.statLabel}>Best Pace</span>
+            </div>
+          </>
+        ) : timed ? (
+          <>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {currentHoldTime != null ? minutesToClock(currentHoldTime) : "—"}
+              </span>
+              <span className={styles.statLabel}>Current Hold Time</span>
+            </div>
+            <div className={styles.stat}>
+              <span className={styles.statValue}>
+                {getBestHoldTime(exercise.history)}
+              </span>
+              <span className={styles.statLabel}>Best Hold Time</span>
             </div>
           </>
         ) : (
@@ -157,7 +177,11 @@ export default function ExerciseDetail() {
           </div>
 
           {isWeighted && <WeightChart history={chartHistory} />}
-          <RepsRPEChart history={chartHistory} />
+          {timed ? (
+            <TimeRPEChart history={chartHistory} />
+          ) : (
+            <RepsRPEChart history={chartHistory} />
+          )}
         </>
       )}
 
@@ -170,7 +194,7 @@ export default function ExerciseDetail() {
             </div>
             <ul className={styles.sets}>
               {sets.map((set) => {
-                const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isPR } =
+                const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isDurationPR, isPR } =
                   getSetPRFlags(set, pr);
 
                 return (
@@ -185,6 +209,7 @@ export default function ExerciseDetail() {
                       {isRepsPR && <PRBadge type="reps" />}
                       {isDistancePR && <PRBadge type="distance" />}
                       {isPacePR && <PRBadge type="pace" />}
+                      {isDurationPR && <PRBadge type="duration" />}
                     </span>
                     {set.is_ladder ? (
                       <span className={styles.ladder}>
@@ -264,6 +289,17 @@ function getCurrentTopSetReps(history) {
 function getCurrentPace(history) {
   const best = bestSpeedFromSets(mostRecentDaySets(history, "speed_kmh"));
   return best != null ? `${best}km/h` : "—";
+}
+
+// Best hold time on the most recent date that has a timed set — "current"
+// hold, as opposed to getBestHoldTime's all-time PR.
+function getCurrentHoldTime(history) {
+  return bestDurationFromSets(mostRecentDaySets(history, "duration_min"));
+}
+
+function getBestHoldTime(history) {
+  const durations = history.map((s) => s.duration_min).filter(Boolean);
+  return durations.length ? minutesToClock(Math.max(...durations)) : "—";
 }
 
 function getBestWeight(history) {

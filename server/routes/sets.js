@@ -26,7 +26,7 @@ router.get("/session/:sessionId", (req, res) => {
   const sets = db
     .prepare(
       `
-    SELECT st.*, e.name AS exercise_name, e.category
+    SELECT st.*, e.name AS exercise_name, e.category, e.progression_type
     FROM sets st
     JOIN exercises e ON e.id = st.exercise_id
     WHERE st.session_id = ?
@@ -195,9 +195,10 @@ router.get("/last/:exerciseId", (req, res) => {
   const row = db
     .prepare(
       `
-    SELECT st.*, s.date
+    SELECT st.*, s.date, e.progression_type
     FROM sets st
     JOIN sessions s ON s.id = st.session_id
+    JOIN exercises e ON e.id = st.exercise_id
     WHERE st.exercise_id = ? AND s.user_id = ?
     ORDER BY s.date DESC, st.set_number DESC
     LIMIT 1

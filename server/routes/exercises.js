@@ -30,9 +30,10 @@ router.get("/:id", (req, res) => {
   exercise.history = db
     .prepare(
       `
-    SELECT st.*, s.date, s.id AS session_id
+    SELECT st.*, s.date, s.id AS session_id, e.progression_type
     FROM sets st
     JOIN sessions s ON s.id = st.session_id
+    JOIN exercises e ON e.id = st.exercise_id
     WHERE st.exercise_id = ? AND s.user_id = ?
     ORDER BY s.date DESC
   `,

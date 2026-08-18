@@ -6,6 +6,8 @@ import {
   bestE1RMFromSets,
   bestRepsFromSets,
   bestSpeedFromSets,
+  bestDurationFromSets,
+  getSetPRFlags,
 } from "./exerciseMetrics";
 
 describe("calculateE1RM", () => {
@@ -49,6 +51,37 @@ describe("formatSet", () => {
 
   it("omits RPE when the field is absent entirely", () => {
     expect(formatSet({ reps: 5, weight_kg: 80 })).toBe("5 reps · 80kg");
+  });
+
+  it("formats a timed (isometric hold) set as time, not weight/reps", () => {
+    expect(
+      formatSet({ progression_type: "time", reps: 1, duration_min: 1.5, rpe: 7 }),
+    ).toBe("1:30 · RPE 7");
+  });
+
+  it("omits the single rep from a timed set but keeps it when >1", () => {
+    expect(formatSet({ progression_type: "time", reps: 1, duration_min: 1 })).toBe(
+      "1:00",
+    );
+    expect(formatSet({ progression_type: "time", reps: 3, duration_min: 0.5 })).toBe(
+      "3 reps · 0:30",
+    );
+  });
+
+  it("does not use cardio formatting for a non-cardio set just because duration_min is set", () => {
+    // Regression: formatSet used to infer cardio formatting from field
+    // presence (distance_m/duration_min) rather than the exercise's actual
+    // progression_type, so a timed set with a stray weight_kg got
+    // mis-rendered as distance/pace and its reps/weight silently dropped.
+    expect(
+      formatSet({ progression_type: "reps", reps: 1, weight_kg: 0, duration_min: 1.5 }),
+    ).not.toContain("km/h");
+  });
+
+  it("uses cardio formatting only when progression_type is 'pace'", () => {
+    expect(
+      formatSet({ progression_type: "pace", distance_m: 5000, duration_min: 24.5 }),
+    ).toBe("5km · 24:30");
   });
 });
 
@@ -100,5 +133,38 @@ describe("bestSpeedFromSets", () => {
 
   it("returns the max speed", () => {
     expect(bestSpeedFromSets([{ speed_kmh: 10 }, { speed_kmh: 12.5 }])).toBe(12.5);
+  });
+});
+
+describe("getSetPRFlags", () => {
+  it("flags a duration PR for a timed set", () => {
+    const flags = getSetPRFlags(
+      { progression_type: "time", reps: 1, duration_min: 1.5 },
+      { best_reps: 1, best_duration: 1.5 },
+    );
+    expect(flags.isDurationPR).toBe(true);
+    expect(flags.isPR).toBe(true);
+  });
+
+  it("does not flag reps as a PR for a timed set, even though reps trivially matches", () => {
+    // Regression: reps is pinned at ~1 for an isometric hold, so a naive
+    // reps>=best_reps check would fire "PR" on every single set.
+    const flags = getSetPRFlags(
+      { progression_type: "time", reps: 1, duration_min: 1 },
+      { best_reps: 1, best_duration: 1.5 },
+    );
+    expect(flags.isRepsPR).toBe(false);
+  });
+});
+
+describe("bestDurationFromSets", () => {
+  it("returns null when nothing has duration_min", () => {
+    expect(bestDurationFromSets([{ duration_min: null }])).toBeNull();
+  });
+
+  it("returns the max duration", () => {
+    expect(
+      bestDurationFromSets([{ duration_min: 1 }, { duration_min: 1.5 }]),
+    ).toBe(1.5);
   });
 });

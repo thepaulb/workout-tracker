@@ -12,10 +12,12 @@ router.get("/bests", (req, res) => {
       e.name,
       e.category,
       e.equipment,
+      e.progression_type,
       MAX(st.weight_kg)                            AS best_weight,
       MAX(st.reps)                                 AS best_reps,
       MAX(st.distance_m)                           AS best_distance,
       MAX(st.speed_kmh)                            AS best_speed,
+      MAX(st.duration_min)                         AS best_duration,
       COUNT(DISTINCT s.id)                         AS session_count,
       MAX(s.date)                                  AS last_session,
       SUM(st.reps * COALESCE(st.weight_kg, 0))     AS total_volume
@@ -36,9 +38,9 @@ router.get("/bests", (req, res) => {
   const recentSets = db
     .prepare(
       `
-    SELECT exercise_id, weight_kg, reps, rpe, speed_kmh
+    SELECT exercise_id, weight_kg, reps, rpe, speed_kmh, duration_min
     FROM (
-      SELECT st.exercise_id, st.weight_kg, st.reps, st.rpe, st.speed_kmh,
+      SELECT st.exercise_id, st.weight_kg, st.reps, st.rpe, st.speed_kmh, st.duration_min,
         RANK() OVER (PARTITION BY st.exercise_id ORDER BY s.date DESC) AS rnk
       FROM sets st
       JOIN sessions s ON s.id = st.session_id
@@ -57,6 +59,7 @@ router.get("/bests", (req, res) => {
       reps: s.reps,
       rpe: s.rpe,
       speed_kmh: s.speed_kmh,
+      duration_min: s.duration_min,
     });
   }
 
@@ -78,7 +81,8 @@ router.get("/prs", (req, res) => {
       MAX(st.weight_kg)   AS best_weight,
       MAX(st.reps)        AS best_reps,
       MAX(st.distance_m)  AS best_distance,
-      MAX(st.speed_kmh)   AS best_speed
+      MAX(st.speed_kmh)   AS best_speed,
+      MAX(st.duration_min) AS best_duration
     FROM exercises e
     JOIN sets st ON st.exercise_id = e.id
     JOIN sessions s ON s.id = st.session_id
@@ -95,6 +99,7 @@ router.get("/prs", (req, res) => {
       best_reps: row.best_reps,
       best_distance: row.best_distance,
       best_speed: row.best_speed,
+      best_duration: row.best_duration,
     };
   }
 

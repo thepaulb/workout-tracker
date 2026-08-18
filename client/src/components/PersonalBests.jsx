@@ -1,11 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import {
   isCardio,
+  isTimed,
   formatDistanceKm,
   formatDaysAgo,
   bestE1RMFromSets,
   bestRepsFromSets,
   bestSpeedFromSets,
+  bestDurationFromSets,
+  minutesToClock,
 } from "../lib/exerciseMetrics";
 import styles from "./PersonalBests.module.scss";
 
@@ -13,9 +16,12 @@ export default function PersonalBests({ bests }) {
   const navigate = useNavigate();
 
   const cardio = bests.filter(isCardio);
-  const withWeight = bests.filter((b) => !isCardio(b) && b.best_weight);
+  const timed = bests.filter((b) => !isCardio(b) && isTimed(b));
+  const withWeight = bests.filter(
+    (b) => !isCardio(b) && !isTimed(b) && b.best_weight,
+  );
   const bodyweight = bests.filter(
-    (b) => !isCardio(b) && !b.best_weight && b.best_reps,
+    (b) => !isCardio(b) && !isTimed(b) && !b.best_weight && b.best_reps,
   );
 
   return (
@@ -61,6 +67,44 @@ export default function PersonalBests({ bests }) {
                     <span className={styles.best}>
                       <span className={styles.bestValue}>{ex.best_reps}</span>
                       <span className={styles.bestLabel}>best reps</span>
+                    </span>
+                  </div>
+                  <div className={styles.last}>
+                    {formatDaysAgo(ex.last_session)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {timed.length > 0 && (
+        <section className={styles.group}>
+          <h3 className={styles.groupTitle}>Timed</h3>
+          <ul className={styles.list}>
+            {timed.map((ex) => {
+              const currentHold = bestDurationFromSets(ex.recent_sets ?? []);
+
+              return (
+                <li
+                  key={ex.id}
+                  className={styles.row}
+                  onClick={() => navigate(`/exercises/${ex.id}`)}
+                >
+                  <div className={styles.name}>{ex.name}</div>
+                  <div className={styles.bests}>
+                    <span className={styles.best}>
+                      <span className={styles.bestValue}>
+                        {currentHold != null ? minutesToClock(currentHold) : "—"}
+                      </span>
+                      <span className={styles.bestLabel}>current hold</span>
+                    </span>
+                    <span className={styles.best}>
+                      <span className={styles.bestValue}>
+                        {ex.best_duration != null ? minutesToClock(ex.best_duration) : "—"}
+                      </span>
+                      <span className={styles.bestLabel}>best hold</span>
                     </span>
                   </div>
                   <div className={styles.last}>
