@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getExercise } from "../api/exercises";
-import { getPRs } from "../api/progress";
 import WeightChart from "../components/WeightChart";
 import RepsRPEChart from "../components/RepsRPEChart";
 import TimeRPEChart from "../components/TimeRPEChart";
@@ -32,17 +31,13 @@ export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState(null);
-  const [prs, setPRs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [range, setRange] = useState("all");
 
   useEffect(() => {
-    Promise.all([getExercise(id), getPRs()])
-      .then(([ex, p]) => {
-        setExercise(ex);
-        setPRs(p);
-      })
+    getExercise(id)
+      .then(setExercise)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -55,7 +50,6 @@ export default function ExerciseDetail() {
   const isWeighted = exercise.progression_type === "weight";
   const timed = exercise.progression_type === "time";
   const chartHistory = filterByRange(exercise.history, range);
-  const pr = prs[exercise.id];
   const currentE1RM = !cardio && !timed && isWeighted ? getCurrentE1RM(exercise.history) : null;
   const currentTopSetReps =
     !cardio && !timed && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
@@ -195,7 +189,7 @@ export default function ExerciseDetail() {
             <ul className={styles.sets}>
               {sets.map((set) => {
                 const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isDurationPR, isPR } =
-                  getSetPRFlags(set, pr);
+                  getSetPRFlags(set);
 
                 return (
                   <li

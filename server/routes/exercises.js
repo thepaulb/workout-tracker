@@ -27,10 +27,31 @@ router.get("/:id", (req, res) => {
         .get(exercise.related_exercise_id)
     : null;
 
+  // A set is a PR the first time it exceeds every prior set's value for that
+  // metric — not merely on ties with the current all-time best, and not on
+  // every repeat of an already-achieved value. Computed here (rather than
+  // client-side against a single "current best" snapshot) because that's
+  // the only way to tell whether *this particular* set was the first to
+  // reach its value.
   exercise.history = db
     .prepare(
       `
-    SELECT st.*, s.date, s.id AS session_id, e.progression_type
+    SELECT st.*, s.date, s.id AS session_id, e.progression_type,
+      (st.weight_kg IS NOT NULL AND st.weight_kg > COALESCE(MAX(st.weight_kg) OVER (
+        ORDER BY s.date ASC, st.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+      ), -1)) AS is_weight_pr,
+      (e.progression_type != 'time' AND st.reps IS NOT NULL AND st.reps > COALESCE(MAX(st.reps) OVER (
+        ORDER BY s.date ASC, st.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+      ), -1)) AS is_reps_pr,
+      (st.distance_m IS NOT NULL AND st.distance_m > COALESCE(MAX(st.distance_m) OVER (
+        ORDER BY s.date ASC, st.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+      ), -1)) AS is_distance_pr,
+      (st.speed_kmh IS NOT NULL AND st.speed_kmh > COALESCE(MAX(st.speed_kmh) OVER (
+        ORDER BY s.date ASC, st.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+      ), -1)) AS is_pace_pr,
+      (st.duration_min IS NOT NULL AND st.duration_min > COALESCE(MAX(st.duration_min) OVER (
+        ORDER BY s.date ASC, st.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+      ), -1)) AS is_duration_pr
     FROM sets st
     JOIN sessions s ON s.id = st.session_id
     JOIN exercises e ON e.id = st.exercise_id

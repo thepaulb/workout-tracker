@@ -119,24 +119,16 @@ export function bestDurationFromSets(sets) {
   return timed.length ? Math.max(...timed.map((s) => s.duration_min)) : null;
 }
 
-export function getSetPRFlags(set, pr) {
-  const isWeightPR = Boolean(
-    pr && set.weight_kg && set.weight_kg >= pr.best_weight,
-  );
-  // Excludes timed sets — reps is pinned at ~1 for an isometric hold, so it
-  // would trivially "PR" on every set instead of meaning anything.
-  const isRepsPR = Boolean(
-    pr && set.progression_type !== "time" && set.reps && set.reps >= pr.best_reps,
-  );
-  const isDistancePR = Boolean(
-    pr && set.distance_m && set.distance_m >= pr.best_distance,
-  );
-  const isPacePR = Boolean(
-    pr && set.speed_kmh && set.speed_kmh >= pr.best_speed,
-  );
-  const isDurationPR = Boolean(
-    pr && set.duration_min && set.duration_min >= pr.best_duration,
-  );
+// Flags come straight off the set — the server marks each one the first
+// time it exceeds every prior set's value for that metric (see the PR
+// query comments in routes/exercises.js and routes/sessions.js), so a
+// tied or repeated value never re-fires the badge.
+export function getSetPRFlags(set) {
+  const isWeightPR = Boolean(set.is_weight_pr);
+  const isRepsPR = Boolean(set.is_reps_pr);
+  const isDistancePR = Boolean(set.is_distance_pr);
+  const isPacePR = Boolean(set.is_pace_pr);
+  const isDurationPR = Boolean(set.is_duration_pr);
   return {
     isWeightPR,
     isRepsPR,

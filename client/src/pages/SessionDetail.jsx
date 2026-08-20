@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
-import { getPRs } from "../api/progress";
 import PRBadge from "../components/PRBadge";
 import { formatSet, getSetPRFlags } from "../lib/exerciseMetrics";
 import styles from "./SessionDetail.module.scss";
@@ -10,16 +9,12 @@ export default function SessionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
-  const [prs, setPRs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([getSession(id), getPRs()])
-      .then(([s, p]) => {
-        setSession(s);
-        setPRs(p);
-      })
+    getSession(id)
+      .then(setSession)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -43,9 +38,8 @@ export default function SessionDetail() {
 
       <ul className={styles.sets}>
         {session.sets.map((set) => {
-          const pr = prs[set.exercise_id];
           const { isWeightPR, isRepsPR, isDistancePR, isPacePR, isPR } =
-            getSetPRFlags(set, pr);
+            getSetPRFlags(set);
 
           return (
             <li

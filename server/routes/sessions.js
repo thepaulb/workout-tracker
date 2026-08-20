@@ -41,18 +41,51 @@ router.get("/:id", (req, res) => {
 
   if (!session) return res.status(404).json({ error: "Session not found" });
 
+  // PR flags need each exercise's full history (not just this session) to
+  // tell whether a set was the first to reach its value — see the matching
+  // comment in routes/exercises.js.
   session.sets = db
     .prepare(
       `
+        WITH pr_calc AS (
+          SELECT
+            st.id,
+            (st.weight_kg IS NOT NULL AND st.weight_kg > COALESCE(MAX(st.weight_kg) OVER (
+              PARTITION BY st.exercise_id ORDER BY s.date ASC, st.id ASC
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ), -1)) AS is_weight_pr,
+            (e.progression_type != 'time' AND st.reps IS NOT NULL AND st.reps > COALESCE(MAX(st.reps) OVER (
+              PARTITION BY st.exercise_id ORDER BY s.date ASC, st.id ASC
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ), -1)) AS is_reps_pr,
+            (st.distance_m IS NOT NULL AND st.distance_m > COALESCE(MAX(st.distance_m) OVER (
+              PARTITION BY st.exercise_id ORDER BY s.date ASC, st.id ASC
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ), -1)) AS is_distance_pr,
+            (st.speed_kmh IS NOT NULL AND st.speed_kmh > COALESCE(MAX(st.speed_kmh) OVER (
+              PARTITION BY st.exercise_id ORDER BY s.date ASC, st.id ASC
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ), -1)) AS is_pace_pr,
+            (st.duration_min IS NOT NULL AND st.duration_min > COALESCE(MAX(st.duration_min) OVER (
+              PARTITION BY st.exercise_id ORDER BY s.date ASC, st.id ASC
+              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+            ), -1)) AS is_duration_pr
+          FROM sets st
+          JOIN sessions s ON s.id = st.session_id
+          JOIN exercises e ON e.id = st.exercise_id
+          WHERE s.user_id = ?
+        )
         SELECT st.*, e.name AS exercise_name, e.category, e.equipment, e.progression_type,
-        MIN(st.id) OVER (PARTITION BY st.exercise_id) AS exercise_first_id
+        MIN(st.id) OVER (PARTITION BY st.exercise_id) AS exercise_first_id,
+        pr.is_weight_pr, pr.is_reps_pr, pr.is_distance_pr, pr.is_pace_pr, pr.is_duration_pr
         FROM sets st
         JOIN exercises e ON e.id = st.exercise_id
+        JOIN pr_calc pr ON pr.id = st.id
         WHERE st.session_id = ?
         ORDER BY exercise_first_id, st.set_number
       `,
     )
-    .all(req.params.id);
+    .all(req.user.id, req.params.id);
 
   res.json(session);
 });

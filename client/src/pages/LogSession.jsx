@@ -75,24 +75,26 @@ export default function LogSession() {
     ? computeSpeedKmh(parseFloat(form.distance_km) || null, durationMin)
     : null;
 
+  // Strictly greater than the pre-session best — a set that only ties the
+  // existing record isn't a new PR, it's a repeat.
   const isWeightPR =
     !cardio &&
     !timed &&
     currentPR &&
     form.weight_kg &&
-    parseFloat(form.weight_kg) >= currentPR.best_weight;
+    parseFloat(form.weight_kg) > currentPR.best_weight;
   const isRepsPR =
     !cardio &&
     !timed &&
     currentPR &&
     form.reps &&
-    parseInt(form.reps) >= currentPR.best_reps;
+    parseInt(form.reps) > currentPR.best_reps;
   const isDistancePR =
-    cardio && currentPR && distanceM && distanceM >= currentPR.best_distance;
+    cardio && currentPR && distanceM && distanceM > currentPR.best_distance;
   const isPacePR =
-    cardio && currentPR && speedKmh && speedKmh >= currentPR.best_speed;
+    cardio && currentPR && speedKmh && speedKmh > currentPR.best_speed;
   const isDurationPR =
-    timed && currentPR && durationMin && durationMin >= currentPR.best_duration;
+    timed && currentPR && durationMin && durationMin > currentPR.best_duration;
   const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR || isDurationPR;
 
   async function handleLogSet() {
@@ -139,9 +141,13 @@ export default function LogSession() {
               rpe: form.rpe,
             };
       await createSet(payload);
-      const updated = await getSession(id);
+      const [updated, updatedPRs] = await Promise.all([
+        getSession(id),
+        getPRs(),
+      ]);
       await checkGoals(selectedExercise.id);
       setSession(updated);
+      setPRs(updatedPRs);
       setForm((f) =>
         cardio
           ? { ...f, distance_km: "", time_str: "", notes: "" }

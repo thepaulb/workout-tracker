@@ -81,6 +81,55 @@ describe("GET /api/exercises/:id", () => {
   });
 });
 
+describe("GET /api/exercises/:id — PR flags (first time only)", () => {
+  it("flags weight/reps PRs the first time a value is exceeded, not on ties or repeats", async () => {
+    const squat = seedExercise({ name: "Squat", progressionType: "weight" });
+    const s1 = seedSession(user.id, { date: "2026-01-01" });
+    const s2 = seedSession(user.id, { date: "2026-01-08" });
+    const s3 = seedSession(user.id, { date: "2026-01-15" });
+    const s4 = seedSession(user.id, { date: "2026-01-22" });
+    const s5 = seedSession(user.id, { date: "2026-01-29" });
+    seedSet(s1, squat, { reps: 5, weightKg: 80 }); // first ever -> PR
+    seedSet(s2, squat, { reps: 5, weightKg: 80 }); // ties best -> not a PR
+    seedSet(s3, squat, { reps: 3, weightKg: 90 }); // new best weight -> PR
+    seedSet(s4, squat, { reps: 8, weightKg: 85 }); // below best weight, but new best reps -> reps PR only
+    seedSet(s5, squat, { reps: 8, weightKg: 90 }); // ties both bests -> not a PR
+
+    const res = await request(app)
+      .get(`/api/exercises/${squat}`)
+      .set("Cookie", cookie);
+    expect(res.status).toBe(200);
+
+    const byDate = Object.fromEntries(
+      res.body.history.map((s) => [s.date, s]),
+    );
+    expect(byDate["2026-01-01"]).toMatchObject({ is_weight_pr: 1, is_reps_pr: 1 });
+    expect(byDate["2026-01-08"]).toMatchObject({ is_weight_pr: 0, is_reps_pr: 0 });
+    expect(byDate["2026-01-15"]).toMatchObject({ is_weight_pr: 1, is_reps_pr: 0 });
+    expect(byDate["2026-01-22"]).toMatchObject({ is_weight_pr: 0, is_reps_pr: 1 });
+    expect(byDate["2026-01-29"]).toMatchObject({ is_weight_pr: 0, is_reps_pr: 0 });
+  });
+
+  it("never flags a reps PR for a timed exercise, even on its first-ever set", async () => {
+    // Regression: reps is pinned at ~1 for an isometric hold, so without the
+    // progression_type guard the first set would trivially "PR" on reps.
+    const hollow = seedExercise({ name: "Hollow Hold", progressionType: "time" });
+    const s1 = seedSession(user.id, { date: "2026-01-01" });
+    const s2 = seedSession(user.id, { date: "2026-01-08" });
+    seedSet(s1, hollow, { reps: 1, durationMin: 1 }); // first ever -> duration PR, not reps
+    seedSet(s2, hollow, { reps: 1, durationMin: 1.5 }); // longer hold -> new duration PR
+
+    const res = await request(app)
+      .get(`/api/exercises/${hollow}`)
+      .set("Cookie", cookie);
+    const byDate = Object.fromEntries(
+      res.body.history.map((s) => [s.date, s]),
+    );
+    expect(byDate["2026-01-01"]).toMatchObject({ is_reps_pr: 0, is_duration_pr: 1 });
+    expect(byDate["2026-01-08"]).toMatchObject({ is_reps_pr: 0, is_duration_pr: 1 });
+  });
+});
+
 describe("POST /api/exercises", () => {
   it("creates an exercise", async () => {
     const res = await request(app)

@@ -137,23 +137,20 @@ describe("bestSpeedFromSets", () => {
 });
 
 describe("getSetPRFlags", () => {
-  it("flags a duration PR for a timed set", () => {
-    const flags = getSetPRFlags(
-      { progression_type: "time", reps: 1, duration_min: 1.5 },
-      { best_reps: 1, best_duration: 1.5 },
-    );
+  // The is_*_pr fields are computed server-side (first time a set exceeds
+  // every prior set for that metric — see routes/exercises.js and
+  // routes/sessions.js); this just verifies they're read through correctly.
+  it("reads PR flags straight off the set", () => {
+    const flags = getSetPRFlags({ is_duration_pr: 1, is_reps_pr: 0 });
     expect(flags.isDurationPR).toBe(true);
+    expect(flags.isRepsPR).toBe(false);
     expect(flags.isPR).toBe(true);
   });
 
-  it("does not flag reps as a PR for a timed set, even though reps trivially matches", () => {
-    // Regression: reps is pinned at ~1 for an isometric hold, so a naive
-    // reps>=best_reps check would fire "PR" on every single set.
-    const flags = getSetPRFlags(
-      { progression_type: "time", reps: 1, duration_min: 1 },
-      { best_reps: 1, best_duration: 1.5 },
-    );
-    expect(flags.isRepsPR).toBe(false);
+  it("treats a falsy/absent flag as not a PR", () => {
+    const flags = getSetPRFlags({ is_weight_pr: 0 });
+    expect(flags.isWeightPR).toBe(false);
+    expect(flags.isPR).toBe(false);
   });
 });
 

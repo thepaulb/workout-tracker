@@ -56,6 +56,25 @@ describe("GET /api/sessions/:id", () => {
     const res = await request(app).get("/api/sessions/999").set("Cookie", cookie);
     expect(res.status).toBe(404);
   });
+
+  it("flags a PR only against the exercise's full history, not just this session's sets", async () => {
+    // Regression: a set that ties an earlier session's PR must not re-fire
+    // the badge, even though this session alone has no prior context for it.
+    const older = seedSession(user.id, { date: "2026-01-01" });
+    seedSet(older, exerciseId, { setNumber: 1, reps: 5, weightKg: 100 });
+    const newer = seedSession(user.id, { date: "2026-02-01" });
+    seedSet(newer, exerciseId, { setNumber: 1, reps: 5, weightKg: 100 }); // ties, not a PR
+
+    const resOlder = await request(app)
+      .get(`/api/sessions/${older}`)
+      .set("Cookie", cookie);
+    expect(resOlder.body.sets[0]).toMatchObject({ is_weight_pr: 1 });
+
+    const resNewer = await request(app)
+      .get(`/api/sessions/${newer}`)
+      .set("Cookie", cookie);
+    expect(resNewer.body.sets[0]).toMatchObject({ is_weight_pr: 0 });
+  });
 });
 
 describe("POST /api/sessions", () => {
