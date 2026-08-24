@@ -20,6 +20,7 @@
   "scripts": {
     "dev": "concurrently \"nodemon server/index.js\" \"cd client && npm run dev\"",
     "server": "nodemon server/index.js",
+    "backup": "node server/backup.js",
     "client": "cd client && npm run dev",
     "test": "npm run test:server && npm run test:client",
     "test:server": "vitest run",
