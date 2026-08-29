@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - name: Install server dependencies
+        run: npm ci
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      # Not gated on lint yet — the client has pre-existing ESLint errors
+      # unrelated to this pipeline. Add this back once those are cleaned up.
+      # - name: Lint client
+      #   run: npm run lint
+      #   working-directory: client
+
+      - name: Run server tests
+        run: npm run test:server
+
+      - name: Run client tests
+        run: npm run test:client
+
+      - name: Build client
+        run: npm run build
+        working-directory: client
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build .
