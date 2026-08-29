@@ -3,6 +3,8 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
@@ -25,5 +27,16 @@ app.use("/api/progress", requireAuth, require("./routes/progress"));
 app.use("/api/body", requireAuth, require("./routes/body"));
 app.use("/api/programmes", requireAuth, require("./routes/programmes"));
 app.use("/api/goals", requireAuth, require("./routes/goals"));
+
+// Serve the built client when it's present (production Docker image). Dev
+// runs the client through Vite's own server instead, so client/dist won't
+// exist there and this block is a no-op.
+const clientDist = path.join(__dirname, "../client/dist");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^\/(?!api\/).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 module.exports = app;
