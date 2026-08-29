@@ -1,5 +1,9 @@
 services:
   app:
+    image: ghcr.io/thepaulb/workout-tracker:latest
+    # `build: .` is kept alongside `image:` so `docker compose build` still
+    # works as a manual fallback (e.g. if the registry is unreachable) —
+    # normal deploys use `docker compose pull` to fetch the image CI built.
     build: .
     # No published port — only reachable through Caddy, over the internal
     # compose network (Docker manages iptables for published ports in a way
