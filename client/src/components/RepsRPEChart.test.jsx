@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import RepsRPEChart, { buildChartData } from "./RepsRPEChart";
+import RepsRPEChart from "./RepsRPEChart";
+import { buildChartData } from "./RepsRPEChart.data";
 
 describe("RepsRPEChart", () => {
   it("renders nothing for empty history", () => {

@@ -27,11 +27,9 @@ jobs:
         run: npm ci
         working-directory: client
 
-      # Not gated on lint yet — the client has pre-existing ESLint errors
-      # unrelated to this pipeline. Add this back once those are cleaned up.
-      # - name: Lint client
-      #   run: npm run lint
-      #   working-directory: client
+      - name: Lint client
+        run: npm run lint
+        working-directory: client
 
       - name: Run server tests
         run: npm run test:server

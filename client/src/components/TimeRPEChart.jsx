@@ -11,6 +11,7 @@ import { weeklyDateAxis } from "../lib/DateAxisTick";
 import { niceZeroDomain } from "../lib/niceAxis";
 import { RPE_MIN, RPE_MAX, NO_RPE_COLOR, rpeColor } from "../lib/rpeColor";
 import { minutesToClock } from "../lib/exerciseMetrics";
+import { buildChartData } from "./TimeRPEChart.data";
 import styles from "./RepsRPEChart.module.scss";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -110,15 +111,6 @@ function CustomTooltip({ active, payload }) {
       {d.rpe != null && <div className={styles.tooltipRpe}>RPE {d.rpe}</div>}
     </div>
   );
-}
-
-// One row per individual set — duration positions the dot, date places it
-// on the x-axis. Sets without a duration logged have nothing to plot.
-export function buildChartData(history) {
-  return history
-    .filter((s) => s.duration_min)
-    .map((s) => ({ date: s.date, duration: s.duration_min, rpe: s.rpe ?? null }))
-    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Spreads same-date dots evenly around their date so a day with several

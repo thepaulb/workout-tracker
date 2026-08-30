@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import WeightChart, { buildChartData } from "./WeightChart";
+import WeightChart from "./WeightChart";
+import { buildChartData } from "./WeightChart.data";
 
 describe("WeightChart", () => {
   it("renders nothing for empty history", () => {
