@@ -6,8 +6,15 @@
 // straight from the live db, including anything only in the WAL, without
 // needing a manual checkpoint or blocking writers for more than a moment.
 //
-// To restore: stop the server, then copy the backup file over gym.db
-//   cp server/backups/gym-<timestamp>.db server/gym.db
+// Respects DB_PATH like db.js, and writes into a "backups" directory next
+// to wherever the db actually lives — in production that's the mounted
+// volume (DB_PATH=/data/gym.db), not the container's throwaway filesystem,
+// so backups survive the next deploy instead of vanishing with the old
+// container. Keeps the last 30 backups; older ones are deleted after each
+// successful run.
+//
+// To restore: stop the server, then copy the backup file over the live db
+//   cp <backups>/gym-<timestamp>.db <DB_PATH>
 //
 //   node server/backup.js
 //   npm run backup
@@ -16,8 +23,10 @@ const fs = require("fs");
 const path = require("path");
 const Database = require("better-sqlite3");
 
-const dbPath = path.join(__dirname, "gym.db");
-const backupDir = path.join(__dirname, "backups");
+const KEEP = 30;
+
+const dbPath = process.env.DB_PATH || path.join(__dirname, "gym.db");
+const backupDir = path.join(path.dirname(dbPath), "backups");
 
 if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
 
@@ -43,6 +52,20 @@ db.backup(backupPath)
 
     console.log(`Backup written: ${path.relative(process.cwd(), backupPath)}`);
     console.log("Row counts:", rows);
+
+    const old = fs
+      .readdirSync(backupDir)
+      .filter((f) => /^gym-.*\.db$/.test(f))
+      .sort()
+      .reverse()
+      .slice(KEEP);
+    for (const f of old) {
+      for (const suffix of ["", "-shm", "-wal"]) {
+        const p = path.join(backupDir, f + suffix);
+        if (fs.existsSync(p)) fs.rmSync(p);
+      }
+    }
+    if (old.length) console.log(`Rotated out ${old.length} old backup(s)`);
   })
   .catch((err) => {
     console.error("Backup failed:", err);
