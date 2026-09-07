@@ -70,7 +70,8 @@ export default function LogSession() {
 
   const durationMin =
     (cardio || timed) && form.time_str ? clockToMinutes(form.time_str) : null;
-  const distanceM = cardio && form.distance_km ? parseFloat(form.distance_km) * 1000 : null;
+  const distanceM =
+    cardio && form.distance_km ? parseFloat(form.distance_km) * 1000 : null;
   const speedKmh = cardio
     ? computeSpeedKmh(parseFloat(form.distance_km) || null, durationMin)
     : null;
@@ -95,7 +96,8 @@ export default function LogSession() {
     cardio && currentPR && speedKmh && speedKmh > currentPR.best_speed;
   const isDurationPR =
     timed && currentPR && durationMin && durationMin > currentPR.best_duration;
-  const isPR = isWeightPR || isRepsPR || isDistancePR || isPacePR || isDurationPR;
+  const isPR =
+    isWeightPR || isRepsPR || isDistancePR || isPacePR || isDurationPR;
 
   async function handleLogSet() {
     if (cardio && (!form.distance_km || !form.time_str)) return;
@@ -314,8 +316,9 @@ export default function LogSession() {
                     <label>Time (mm:ss)</label>
                     <input
                       type="text"
-                      inputMode="numeric"
-                      placeholder="0:00"
+                      inputmode="numeric"
+                      placeholder="mm:ss"
+                      pattern="^[0-5][0-9]:[0-5][0-9]$"
                       value={form.time_str}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, time_str: e.target.value }))
@@ -342,8 +345,9 @@ export default function LogSession() {
                     <label>Time (mm:ss)</label>
                     <input
                       type="text"
-                      inputMode="numeric"
-                      placeholder="0:00"
+                      inputmode="numeric"
+                      placeholder="mm:ss"
+                      pattern="^[0-5][0-9]:[0-5][0-9]$"
                       value={form.time_str}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, time_str: e.target.value }))
