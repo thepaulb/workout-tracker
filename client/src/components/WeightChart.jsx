@@ -11,11 +11,11 @@ import {
 } from "recharts";
 import { weeklyDateAxis } from "../lib/DateAxisTick";
 import { niceStepDomain } from "../lib/niceAxis";
-import { buildChartData } from "./WeightChart.data";
+import { buildChartData, DEFAULT_GAP_BREAK_DAYS } from "./WeightChart.data";
 import styles from "./WeightChart.module.scss";
 
-export default function WeightChart({ history }) {
-  const data = buildChartData(history);
+export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_DAYS }) {
+  const data = buildChartData(history, gapBreakDays);
   if (!data.length) return null;
 
   const weights = data.map((d) => d.weight);
@@ -38,6 +38,9 @@ export default function WeightChart({ history }) {
     ticks: dateTicks,
     tick: DateTick,
   } = weeklyDateAxis(data);
+
+  const segmentCount = Math.max(...data.map((d) => d.__segment)) + 1;
+  const segments = Array.from({ length: segmentCount }, (_, i) => i);
 
   return (
     <div className={styles.wrapper}>
@@ -83,26 +86,34 @@ export default function WeightChart({ history }) {
             strokeDasharray="3 3"
             strokeOpacity={0.4}
           />
-          <Line
-            type="monotone"
-            dataKey="weight"
-            name="Weight"
-            stroke="#4a9eff"
-            strokeWidth={2}
-            dot={{ fill: "#4a9eff", r: 3, strokeWidth: 0 }}
-            activeDot={{ fill: "#4a9eff", r: 5, strokeWidth: 0 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="oneRepMax"
-            name="e1RM"
-            stroke="#a78bfa"
-            strokeWidth={2}
-            strokeDasharray="4 3"
-            dot={{ fill: "#a78bfa", r: 3, strokeWidth: 0 }}
-            activeDot={{ fill: "#a78bfa", r: 5, strokeWidth: 0 }}
-            connectNulls
-          />
+          {segments.map((s) => (
+            <Line
+              key={`weight-${s}`}
+              type="monotone"
+              dataKey={`weight_${s}`}
+              name="Weight"
+              legendType={s === 0 ? "line" : "none"}
+              stroke="#4a9eff"
+              strokeWidth={2}
+              dot={{ fill: "#4a9eff", r: 3, strokeWidth: 0 }}
+              activeDot={{ fill: "#4a9eff", r: 5, strokeWidth: 0 }}
+            />
+          ))}
+          {segments.map((s) => (
+            <Line
+              key={`e1rm-${s}`}
+              type="monotone"
+              dataKey={`oneRepMax_${s}`}
+              name="e1RM"
+              legendType={s === 0 ? "line" : "none"}
+              stroke="#a78bfa"
+              strokeWidth={2}
+              strokeDasharray="4 3"
+              dot={{ fill: "#a78bfa", r: 3, strokeWidth: 0 }}
+              activeDot={{ fill: "#a78bfa", r: 5, strokeWidth: 0 }}
+              connectNulls
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>
