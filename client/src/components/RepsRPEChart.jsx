@@ -7,9 +7,10 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { weeklyDateAxis } from "../lib/DateAxisTick";
+import { weeklyDateAxis, stepDaysForWidth } from "../lib/DateAxisTick";
 import { niceZeroDomain } from "../lib/niceAxis";
 import { RPE_MIN, RPE_MAX, NO_RPE_COLOR, rpeColor } from "../lib/rpeColor";
+import { useContainerWidth } from "../lib/useContainerWidth";
 import { buildChartData } from "./RepsRPEChart.data";
 import styles from "./RepsRPEChart.module.scss";
 
@@ -23,6 +24,7 @@ const JITTER_DAY_FRACTION = 0.15; // keeps a date's dots inside its own column
 // dot along a green (easy) -> coral (max effort) gradient; sets with no
 // RPE logged get a neutral grey rather than disappearing.
 export default function RepsRPEChart({ history }) {
+  const [containerRef, containerWidth] = useContainerWidth();
   const jittered = withJitter(buildChartData(history));
   if (!jittered.length) return null;
 
@@ -32,7 +34,7 @@ export default function RepsRPEChart({ history }) {
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(jittered);
+  } = weeklyDateAxis(jittered, "date", stepDaysForWidth(containerWidth));
 
   const chartData = dateJoined.map((d) => ({
     ...d,
@@ -43,7 +45,7 @@ export default function RepsRPEChart({ history }) {
   const { domain: repsDomain, ticks: repsTicks } = niceZeroDomain(maxReps);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={containerRef}>
       <h2 className={styles.title}>Reps per Set</h2>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart

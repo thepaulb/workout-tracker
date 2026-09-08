@@ -1,5 +1,14 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Picks a tick cadence from the chart's rendered width so date labels
+// thin out on narrow screens instead of overlapping. Stays weekly once
+// there's room for it.
+export function stepDaysForWidth(width) {
+  if (width >= 600) return 7;
+  if (width >= 400) return 14;
+  return 21;
+}
+
 // Prepares props for a fixed-interval weekly x-axis: adds a numeric
 // timestamp field to each row (so points plot at their true calendar
 // position instead of being evenly spaced by index) and computes gridlines
@@ -12,7 +21,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // are 1:1 with data array entries, so a day with no workout has nowhere
 // on the axis to put a tick. This switches the axis to numeric/time-based
 // so ticks can land on dates with no data point.
-export function weeklyDateAxis(data, dateKey = "date") {
+export function weeklyDateAxis(data, dateKey = "date", stepDays = 7) {
   if (!data.length) {
     return { data: [], xKey: "__ms", domain: [0, 1], ticks: [], tick: () => null };
   }
@@ -23,7 +32,7 @@ export function weeklyDateAxis(data, dateKey = "date") {
   const maxMs = Math.max(...msValues);
 
   const ticks = [];
-  for (let t = minMs + 7 * DAY_MS; t <= maxMs; t += 7 * DAY_MS) ticks.push(t);
+  for (let t = minMs + stepDays * DAY_MS; t <= maxMs; t += stepDays * DAY_MS) ticks.push(t);
   if (!ticks.length) {
     // Range too short for a weekly grid — show the endpoints rather than
     // leaving the axis blank.

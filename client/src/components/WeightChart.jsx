@@ -9,12 +9,14 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import { weeklyDateAxis } from "../lib/DateAxisTick";
+import { weeklyDateAxis, stepDaysForWidth } from "../lib/DateAxisTick";
 import { niceStepDomain } from "../lib/niceAxis";
+import { useContainerWidth } from "../lib/useContainerWidth";
 import { buildChartData, DEFAULT_GAP_BREAK_DAYS } from "./WeightChart.data";
 import styles from "./WeightChart.module.scss";
 
 export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_DAYS }) {
+  const [containerRef, containerWidth] = useContainerWidth();
   const data = buildChartData(history, gapBreakDays);
   if (!data.length) return null;
 
@@ -37,13 +39,13 @@ export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(data);
+  } = weeklyDateAxis(data, "date", stepDaysForWidth(containerWidth));
 
   const segmentCount = Math.max(...data.map((d) => d.__segment)) + 1;
   const segments = Array.from({ length: segmentCount }, (_, i) => i);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={containerRef}>
       <h2 className={styles.title}>Weight Progression (KG)</h2>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart
