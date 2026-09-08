@@ -17,6 +17,7 @@ import {
   bestDurationFromSets,
   minutesToClock,
 } from "../lib/exerciseMetrics";
+import { isBeforeCutoff } from "../lib/presentationCutoff";
 
 import styles from "./ExerciseDetail.module.scss";
 
@@ -45,15 +46,16 @@ export default function ExerciseDetail() {
   if (loading) return <div className={styles.state}>Loading...</div>;
   if (error) return <div className={styles.state}>Error: {error}</div>;
 
-  const grouped = groupBySession(exercise.history).reverse();
+  const history = exercise.history.filter((s) => !isBeforeCutoff(s.date));
+  const grouped = groupBySession(history).reverse();
   const cardio = isCardio(exercise);
   const isWeighted = exercise.progression_type === "weight";
   const timed = exercise.progression_type === "time";
-  const chartHistory = filterByRange(exercise.history, range);
-  const currentE1RM = !cardio && !timed && isWeighted ? getCurrentE1RM(exercise.history) : null;
+  const chartHistory = filterByRange(history, range);
+  const currentE1RM = !cardio && !timed && isWeighted ? getCurrentE1RM(history) : null;
   const currentTopSetReps =
-    !cardio && !timed && currentE1RM == null ? getCurrentTopSetReps(exercise.history) : null;
-  const currentHoldTime = timed ? getCurrentHoldTime(exercise.history) : null;
+    !cardio && !timed && currentE1RM == null ? getCurrentTopSetReps(history) : null;
+  const currentHoldTime = timed ? getCurrentHoldTime(history) : null;
 
   return (
     <div className={styles.page}>
@@ -80,7 +82,7 @@ export default function ExerciseDetail() {
       <div className={styles.stats}>
         <div className={styles.stat}>
           <span className={styles.statValue}>
-            {getLastTrained(exercise.history)}
+            {getLastTrained(history)}
           </span>
           <span className={styles.statLabel}>Last Trained</span>
         </div>
@@ -88,19 +90,19 @@ export default function ExerciseDetail() {
           <>
             <div className={styles.stat}>
               <span className={styles.statValue}>
-                {getCurrentPace(exercise.history)}
+                {getCurrentPace(history)}
               </span>
               <span className={styles.statLabel}>Current Pace</span>
             </div>
             <div className={styles.stat}>
               <span className={styles.statValue}>
-                {getBestDistance(exercise.history)}
+                {getBestDistance(history)}
               </span>
               <span className={styles.statLabel}>Best Distance</span>
             </div>
             <div className={styles.stat}>
               <span className={styles.statValue}>
-                {getBestPace(exercise.history)}
+                {getBestPace(history)}
               </span>
               <span className={styles.statLabel}>Best Pace</span>
             </div>
@@ -115,7 +117,7 @@ export default function ExerciseDetail() {
             </div>
             <div className={styles.stat}>
               <span className={styles.statValue}>
-                {getBestHoldTime(exercise.history)}
+                {getBestHoldTime(history)}
               </span>
               <span className={styles.statLabel}>Best Hold Time</span>
             </div>
@@ -135,14 +137,14 @@ export default function ExerciseDetail() {
             {isWeighted && (
               <div className={styles.stat}>
                 <span className={styles.statValue}>
-                  {getBestWeight(exercise.history)}
+                  {getBestWeight(history)}
                 </span>
                 <span className={styles.statLabel}>Best Weight</span>
               </div>
             )}
             <div className={styles.stat}>
               <span className={styles.statValue}>
-                {getBestReps(exercise.history)}
+                {getBestReps(history)}
               </span>
               <span className={styles.statLabel}>Best Reps</span>
             </div>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
 import PRBadge from "../components/PRBadge";
 import { formatSet, getSetPRFlags } from "../lib/exerciseMetrics";
+import { isBeforeCutoff } from "../lib/presentationCutoff";
 import styles from "./SessionDetail.module.scss";
 
 export default function SessionDetail() {
@@ -21,6 +22,8 @@ export default function SessionDetail() {
 
   if (loading) return <div className={styles.state}>Loading...</div>;
   if (error) return <div className={styles.state}>Error: {error}</div>;
+  if (isBeforeCutoff(session.date))
+    return <div className={styles.state}>Session not found</div>;
 
   return (
     <div className={styles.page}>

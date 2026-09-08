@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getSessions } from "../api/sessions";
 import { useNavigate } from "react-router-dom";
+import { isBeforeCutoff } from "../lib/presentationCutoff";
 import styles from "./SessionsList.module.scss";
 
 export default function SessionsList() {
@@ -19,11 +20,13 @@ export default function SessionsList() {
   if (loading) return <div className={styles.state}>Loading...</div>;
   if (error) return <div className={styles.state}>Error: {error}</div>;
 
+  const visibleSessions = sessions.filter((s) => !isBeforeCutoff(s.date));
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Sessions</h1>
-        <span className={styles.count}>{sessions.length} total</span>
+        <span className={styles.count}>{visibleSessions.length} total</span>
         <button
           className={styles.newSession}
           onClick={() => navigate("/sessions/new")}
@@ -33,7 +36,7 @@ export default function SessionsList() {
       </header>
 
       <ul className={styles.list}>
-        {sessions.map((session) => (
+        {visibleSessions.map((session) => (
           <li
             key={session.id}
             className={styles.card}
