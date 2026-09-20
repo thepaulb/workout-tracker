@@ -78,3 +78,31 @@ describe("weeklyDateAxis", () => {
     expect(tickDates).toEqual(["2026-07-16", "2026-07-23", "2026-07-30"]);
   });
 });
+
+describe("weeklyDateAxis month labels", () => {
+  const monthTicks = (axis) =>
+    axis.ticks.map((ms) => {
+      const d = new Date(ms);
+      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    });
+
+  it("places ticks on the 1st of each month within the range", () => {
+    const data = [
+      { date: "2026-03-10", value: 1 },
+      { date: "2026-06-20", value: 2 },
+    ];
+    const axis = weeklyDateAxis(data, "date", 7, { labels: "month" });
+    expect(monthTicks(axis)).toEqual(["2026-4-1", "2026-5-1", "2026-6-1"]);
+  });
+
+  it("thins month ticks on a narrow chart", () => {
+    const data = [
+      { date: "2025-01-10", value: 1 },
+      { date: "2026-06-20", value: 2 },
+    ];
+    const wide = weeklyDateAxis(data, "date", 7, { labels: "month", width: 2000 });
+    const narrow = weeklyDateAxis(data, "date", 7, { labels: "month", width: 300 });
+    expect(narrow.ticks.length).toBeLessThan(wide.ticks.length);
+    expect(narrow.ticks.length).toBeLessThanOrEqual(6);
+  });
+});

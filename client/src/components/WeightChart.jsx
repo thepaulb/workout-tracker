@@ -15,7 +15,7 @@ import { useContainerWidth } from "../lib/useContainerWidth";
 import { buildChartData, DEFAULT_GAP_BREAK_DAYS } from "./WeightChart.data";
 import styles from "./WeightChart.module.scss";
 
-export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_DAYS }) {
+export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_DAYS, dateLabels }) {
   const [containerRef, containerWidth] = useContainerWidth();
   const data = buildChartData(history, gapBreakDays);
   if (!data.length) return null;
@@ -39,7 +39,10 @@ export default function WeightChart({ history, gapBreakDays = DEFAULT_GAP_BREAK_
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(data, "date", stepDaysForWidth(containerWidth));
+  } = weeklyDateAxis(data, "date", stepDaysForWidth(containerWidth), {
+    labels: dateLabels,
+    width: containerWidth,
+  });
 
   const segmentCount = Math.max(...data.map((d) => d.__segment)) + 1;
   const segments = Array.from({ length: segmentCount }, (_, i) => i);

@@ -23,7 +23,7 @@ const JITTER_DAY_FRACTION = 0.15; // keeps a date's dots inside its own column
 // don't sit exactly on top of each other. RPE, when logged, tints the
 // dot along a green (easy) -> coral (max effort) gradient; sets with no
 // RPE logged get a neutral grey rather than disappearing.
-export default function RepsRPEChart({ history }) {
+export default function RepsRPEChart({ history, dateLabels }) {
   const [containerRef, containerWidth] = useContainerWidth();
   const jittered = withJitter(buildChartData(history));
   if (!jittered.length) return null;
@@ -34,7 +34,10 @@ export default function RepsRPEChart({ history }) {
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(jittered, "date", stepDaysForWidth(containerWidth));
+  } = weeklyDateAxis(jittered, "date", stepDaysForWidth(containerWidth), {
+    labels: dateLabels,
+    width: containerWidth,
+  });
 
   const chartData = dateJoined.map((d) => ({
     ...d,

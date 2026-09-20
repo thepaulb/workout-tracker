@@ -52,6 +52,8 @@ export default function ExerciseDetail() {
   const isWeighted = exercise.progression_type === "weight";
   const timed = exercise.progression_type === "time";
   const chartHistory = filterByRange(history, range);
+  // Short ranges label the axis with day numbers, longer ones with months.
+  const dateLabels = range === "1w" || range === "1m" ? "day" : "month";
   const currentE1RM = !cardio && !timed && isWeighted ? getCurrentE1RM(history) : null;
   const currentTopSetReps =
     !cardio && !timed && currentE1RM == null ? getCurrentTopSetReps(history) : null;
@@ -172,11 +174,11 @@ export default function ExerciseDetail() {
             ))}
           </div>
 
-          {isWeighted && <WeightChart history={chartHistory} />}
+          {isWeighted && <WeightChart history={chartHistory} dateLabels={dateLabels} />}
           {timed ? (
-            <TimeRPEChart history={chartHistory} />
+            <TimeRPEChart history={chartHistory} dateLabels={dateLabels} />
           ) : (
-            <RepsRPEChart history={chartHistory} />
+            <RepsRPEChart history={chartHistory} dateLabels={dateLabels} />
           )}
         </>
       )}

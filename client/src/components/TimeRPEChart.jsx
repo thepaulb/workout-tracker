@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { weeklyDateAxis } from "../lib/DateAxisTick";
 import { niceZeroDomain } from "../lib/niceAxis";
+import { useContainerWidth } from "../lib/useContainerWidth";
 import { RPE_MIN, RPE_MAX, NO_RPE_COLOR, rpeColor } from "../lib/rpeColor";
 import { minutesToClock } from "../lib/exerciseMetrics";
 import { buildChartData } from "./TimeRPEChart.data";
@@ -20,7 +21,8 @@ const JITTER_DAY_FRACTION = 0.15; // keeps a date's dots inside its own column
 // Same strip-plot pattern as RepsRPEChart, but for isometric holds: each
 // set gets a dot at its hold time instead of its rep count, since reps are
 // ~always 1 for a timed exercise and aren't worth plotting.
-export default function TimeRPEChart({ history }) {
+export default function TimeRPEChart({ history, dateLabels }) {
+  const [containerRef, containerWidth] = useContainerWidth();
   const jittered = withJitter(buildChartData(history));
   if (!jittered.length) return null;
 
@@ -30,7 +32,7 @@ export default function TimeRPEChart({ history }) {
     domain: dateDomain,
     ticks: dateTicks,
     tick: DateTick,
-  } = weeklyDateAxis(jittered);
+  } = weeklyDateAxis(jittered, "date", 7, { labels: dateLabels, width: containerWidth });
 
   const chartData = dateJoined.map((d) => ({
     ...d,
@@ -41,7 +43,7 @@ export default function TimeRPEChart({ history }) {
   const { domain: durationDomain, ticks: durationTicks } = niceZeroDomain(maxDuration);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={containerRef}>
       <h2 className={styles.title}>Hold Time per Set</h2>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart
