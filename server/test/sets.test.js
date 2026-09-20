@@ -115,6 +115,29 @@ describe("PATCH /api/sets/:id", () => {
     expect(db.prepare("SELECT rpe FROM sets WHERE id = ?").get(setId).rpe).toBe(9);
   });
 
+  it("clears a field when explicitly set to null", async () => {
+    const setId = seedSet(sessionId, exerciseId, { reps: 5, weightKg: 100 });
+    db.prepare("UPDATE sets SET rest_min = 2, rpe = 8 WHERE id = ?").run(setId);
+    const res = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set("Cookie", cookie)
+      .send({ weight_kg: null, rest_min: null, rpe: null });
+    expect(res.status).toBe(200);
+    const row = db.prepare("SELECT reps, weight_kg, rest_min, rpe FROM sets WHERE id = ?").get(setId);
+    expect(row).toMatchObject({ reps: 5, weight_kg: null, rest_min: null, rpe: null });
+  });
+
+  it("succeeds as a no-op when the body has no updatable fields", async () => {
+    const setId = seedSet(sessionId, exerciseId, { reps: 5, weightKg: 100 });
+    const res = await request(app)
+      .patch(`/api/sets/${setId}`)
+      .set("Cookie", cookie)
+      .send({});
+    expect(res.status).toBe(200);
+    const row = db.prepare("SELECT reps, weight_kg FROM sets WHERE id = ?").get(setId);
+    expect(row).toMatchObject({ reps: 5, weight_kg: 100 });
+  });
+
   it("rejects an out-of-range rpe on update (400)", async () => {
     const setId = seedSet(sessionId, exerciseId, { reps: 5 });
     const res = await request(app)

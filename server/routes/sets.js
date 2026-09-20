@@ -17,6 +17,20 @@ function isValidRpe(rpe) {
   return Number.isInteger(rpe * 2);
 }
 
+const PATCHABLE_FIELDS = [
+  "reps",
+  "weight_kg",
+  "weight_note",
+  "duration_min",
+  "distance_m",
+  "speed_kmh",
+  "rest_min",
+  "is_ladder",
+  "ladder_step",
+  "notes",
+  "rpe",
+];
+
 // GET all sets for a session (usually accessed via /api/sessions/:id but useful standalone)
 router.get("/session/:sessionId", (req, res) => {
   if (!ownedSession(req.params.sessionId, req.user.id)) {
@@ -118,56 +132,29 @@ router.patch("/:id", (req, res) => {
     .get(req.params.id, req.user.id);
   if (!set) return res.status(404).json({ error: "Set not found" });
 
-  const {
-    reps,
-    weight_kg,
-    weight_note,
-    duration_min,
-    distance_m,
-    speed_kmh,
-    rest_min,
-    is_ladder,
-    ladder_step,
-    notes,
-    rpe,
-  } = req.body;
-
-  if (!isValidRpe(rpe ?? null)) {
+  if (!isValidRpe(req.body.rpe ?? null)) {
     return res
       .status(400)
       .json({ error: "rpe must be null or a number 6-10 in 0.5 increments" });
   }
 
-  db.prepare(
-    `
-    UPDATE sets SET
-      reps         = COALESCE(?, reps),
-      weight_kg    = COALESCE(?, weight_kg),
-      weight_note  = COALESCE(?, weight_note),
-      duration_min = COALESCE(?, duration_min),
-      distance_m   = COALESCE(?, distance_m),
-      speed_kmh    = COALESCE(?, speed_kmh),
-      rest_min     = COALESCE(?, rest_min),
-      is_ladder    = COALESCE(?, is_ladder),
-      ladder_step  = COALESCE(?, ladder_step),
-      notes        = COALESCE(?, notes),
-      rpe          = COALESCE(?, rpe)
-    WHERE id = ?
-  `,
-  ).run(
-    reps ?? null,
-    weight_kg ?? null,
-    weight_note ?? null,
-    duration_min ?? null,
-    distance_m ?? null,
-    speed_kmh ?? null,
-    rest_min ?? null,
-    is_ladder !== undefined ? (is_ladder ? 1 : 0) : null,
-    ladder_step ?? null,
-    notes ?? null,
-    rpe ?? null,
-    req.params.id,
-  );
+  // Only fields present in the body are touched, so an explicit null clears
+  // a value while an omitted field is left as-is.
+  const assignments = [];
+  const values = [];
+  for (const field of PATCHABLE_FIELDS) {
+    if (!(field in req.body)) continue;
+    const value = req.body[field];
+    assignments.push(`${field} = ?`);
+    values.push(field === "is_ladder" ? (value ? 1 : 0) : (value ?? null));
+  }
+
+  if (assignments.length > 0) {
+    db.prepare(`UPDATE sets SET ${assignments.join(", ")} WHERE id = ?`).run(
+      ...values,
+      req.params.id,
+    );
+  }
 
   res.json({ ok: true });
 });

@@ -10,6 +10,16 @@ export async function createSet(set) {
   return res.json();
 }
 
+export async function updateSet(id, fields) {
+  const res = await fetch(`${BASE}/sets/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) throw new Error("Failed to update set");
+  return res.json();
+}
+
 export async function deleteSet(id) {
   const res = await fetch(`${BASE}/sets/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete set");

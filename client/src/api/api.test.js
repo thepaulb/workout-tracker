@@ -42,6 +42,16 @@ describe("api modules — request shape", () => {
     );
   });
 
+  it("updateSet PATCHes /api/sets/:id with the fields", async () => {
+    const fetchMock = mockFetch({ json: { ok: true } });
+    await sets.updateSet(7, { reps: 6, weight_kg: null });
+    expect(fetchMock).toHaveBeenCalledWith("/api/sets/7", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reps: 6, weight_kg: null }),
+    });
+  });
+
   it("deleteEntry DELETEs /api/body/:id", async () => {
     const fetchMock = mockFetch({ json: { ok: true } });
     await body.deleteEntry(42);

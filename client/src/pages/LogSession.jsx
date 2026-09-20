@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getSession } from "../api/sessions";
 import { getExercises } from "../api/exercises";
-import { createSet, deleteSet, getLastSet } from "../api/sets";
+import { createSet, updateSet, deleteSet, getLastSet } from "../api/sets";
 import { getPRs } from "../api/progress";
 import { checkGoals } from "../api/goals";
 import {
   isCardio,
   formatSet,
   clockToMinutes,
+  minutesToClock,
   computeSpeedKmh,
 } from "../lib/exerciseMetrics";
 import RPEInput from "../components/RPEInput";
@@ -26,6 +27,7 @@ export default function LogSession() {
   const [lastSet, setLastSet] = useState(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingSet, setEditingSet] = useState(null);
   const [form, setForm] = useState({
     reps: "",
     weight_kg: "",
@@ -49,6 +51,7 @@ export default function LogSession() {
   }, [id]);
 
   async function selectExercise(exercise) {
+    setEditingSet(null);
     setSelected(exercise);
     const last = await getLastSet(exercise.id);
     setLastSet(last);
@@ -62,6 +65,32 @@ export default function LogSession() {
       rpe: null,
     });
     setView("log");
+  }
+
+  function startEditSet(set) {
+    setEditingSet(set);
+    setSelected({
+      id: set.exercise_id,
+      name: set.exercise_name,
+      category: set.category,
+      progression_type: set.progression_type,
+    });
+    setLastSet(null);
+    setForm({
+      reps: set.reps ?? "",
+      weight_kg: set.weight_kg ?? "",
+      rest_min: set.rest_min ?? "",
+      distance_km: set.distance_m ? String(set.distance_m / 1000) : "",
+      time_str: set.duration_min != null ? minutesToClock(set.duration_min) : "",
+      notes: set.notes ?? "",
+      rpe: set.rpe ?? null,
+    });
+    setView("log");
+  }
+
+  function leaveLogView() {
+    setEditingSet(null);
+    setView("session");
   }
 
   const cardio = isCardio(selectedExercise);
@@ -105,43 +134,52 @@ export default function LogSession() {
     if (!cardio && !timed && !form.reps) return;
     setSaving(true);
     try {
-      const setsForExercise = session.sets.filter(
-        (s) => s.exercise_id === selectedExercise.id,
-      );
-      const payload = cardio
+      const fields = cardio
         ? {
-            session_id: parseInt(id),
-            exercise_id: selectedExercise.id,
-            set_number: setsForExercise.length + 1,
             distance_m: distanceM,
             duration_min: durationMin,
             speed_kmh: speedKmh,
             notes: form.notes || null,
-            is_ladder: false,
           }
         : timed
           ? {
-              session_id: parseInt(id),
-              exercise_id: selectedExercise.id,
-              set_number: setsForExercise.length + 1,
               reps: form.reps ? parseInt(form.reps) : 1,
               duration_min: durationMin,
               rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
               notes: form.notes || null,
-              is_ladder: false,
               rpe: form.rpe,
             }
           : {
-              session_id: parseInt(id),
-              exercise_id: selectedExercise.id,
-              set_number: setsForExercise.length + 1,
               reps: parseInt(form.reps),
               weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
               rest_min: form.rest_min ? parseFloat(form.rest_min) : null,
               notes: form.notes || null,
-              is_ladder: false,
               rpe: form.rpe,
             };
+
+      if (editingSet) {
+        await updateSet(editingSet.id, fields);
+        const [updated, updatedPRs] = await Promise.all([
+          getSession(id),
+          getPRs(),
+        ]);
+        await checkGoals(selectedExercise.id);
+        setSession(updated);
+        setPRs(updatedPRs);
+        leaveLogView();
+        return;
+      }
+
+      const setsForExercise = session.sets.filter(
+        (s) => s.exercise_id === selectedExercise.id,
+      );
+      const payload = {
+        session_id: parseInt(id),
+        exercise_id: selectedExercise.id,
+        set_number: setsForExercise.length + 1,
+        is_ladder: false,
+        ...fields,
+      };
       await createSet(payload);
       const [updated, updatedPRs] = await Promise.all([
         getSession(id),
@@ -211,6 +249,12 @@ export default function LogSession() {
                           {formatSet(set)}
                         </span>
                         <button
+                          className={styles.editSet}
+                          onClick={() => startEditSet(set)}
+                        >
+                          Edit
+                        </button>
+                        <button
                           className={styles.deleteSet}
                           onClick={() => handleDeleteSet(set.id)}
                         >
@@ -279,13 +323,15 @@ export default function LogSession() {
       {view === "log" && (
         <>
           <div className={styles.topBar}>
-            <button className={styles.back} onClick={() => setView("session")}>
+            <button className={styles.back} onClick={leaveLogView}>
               ← Back
             </button>
-            <span className={styles.sessionDate}>{selectedExercise.name}</span>
+            <span className={styles.sessionDate}>
+              {editingSet ? `Edit set · ${selectedExercise.name}` : selectedExercise.name}
+            </span>
           </div>
 
-          {lastSet && (
+          {lastSet && !editingSet && (
             <div className={styles.lastSet}>
               <span className={styles.lastSetLabel}>Last time</span>
               <span className={styles.lastSetValue}>{formatSet(lastSet)}</span>
@@ -464,7 +510,7 @@ export default function LogSession() {
               </>
             )}
 
-            {isPR && (
+            {isPR && !editingSet && (
               <div className={styles.prAlert}>
                 🏆 New PR! {isWeightPR && `Weight: ${form.weight_kg}kg`}{" "}
                 {isRepsPR && `Reps: ${form.reps}`}
@@ -476,7 +522,7 @@ export default function LogSession() {
 
             <div className={styles.logActions}>
               <button
-                className={`${styles.logSet} ${isPR ? styles.logSetPR : ""}`}
+                className={`${styles.logSet} ${isPR && !editingSet ? styles.logSetPR : ""}`}
                 onClick={handleLogSet}
                 disabled={
                   saving ||
@@ -487,13 +533,21 @@ export default function LogSession() {
                       : !form.reps)
                 }
               >
-                {saving ? "Logging..." : isPR ? "🏆 Log PR" : "Log Set"}
+                {editingSet
+                  ? saving
+                    ? "Saving..."
+                    : "Save Changes"
+                  : saving
+                    ? "Logging..."
+                    : isPR
+                      ? "🏆 Log PR"
+                      : "Log Set"}
               </button>
               <button
                 className={styles.doneExercise}
-                onClick={() => setView("session")}
+                onClick={leaveLogView}
               >
-                Done with exercise
+                {editingSet ? "Cancel" : "Done with exercise"}
               </button>
             </div>
 
