@@ -1,0 +1,13 @@
+# Shared reverse proxy for every app on this box. Each app joins the
+# external `web` docker network under its own alias; Caddy reaches them by
+# that alias, never by compose service name (both apps call theirs `app`).
+#
+# After editing: docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+gym.theanvil.uk {
+	reverse_proxy gym:3001
+}
+
+bookmarks.theanvil.uk {
+	reverse_proxy bookmarker:3001
+}
