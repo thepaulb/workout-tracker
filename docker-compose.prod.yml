@@ -5,31 +5,27 @@ services:
     # works as a manual fallback (e.g. if the registry is unreachable) —
     # normal deploys use `docker compose pull` to fetch the image CI built.
     build: .
-    # No published port — only reachable through Caddy, over the internal
-    # compose network (Docker manages iptables for published ports in a way
-    # that can bypass ufw, so the app simply isn't given a port to publish).
+    # No published port — only reachable through the shared Caddy in
+    # proxy/, over the external `web` network (Docker manages iptables for
+    # published ports in a way that can bypass ufw, so the app simply isn't
+    # given a port to publish).
     env_file:
       - .env
     environment:
       DB_PATH: /data/gym.db
     volumes:
       - gym-data:/data
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - app
+    networks:
+      web:
+        # Unique name on the shared network — other apps' services are also
+        # called `app`, so Caddy addresses this one by alias.
+        aliases:
+          - gym
     restart: unless-stopped
 
 volumes:
   gym-data:
-  caddy-data:
-  caddy-config:
+
+networks:
+  web:
+    external: true
