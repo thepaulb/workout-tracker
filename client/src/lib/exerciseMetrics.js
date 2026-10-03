@@ -61,16 +61,17 @@ export function formatDistanceKm(meters) {
   return `${parseFloat((meters / 1000).toFixed(2))}km`;
 }
 
-// Estimated 1RM for a single set. When a hard-enough RPE is logged
-// (>= 7), uses RPE-adjusted Epley (accounts for reps left in the tank);
-// otherwise falls back to plain Epley — the original, un-adjusted formula.
+// Low-RPE reps-in-reserve guesses are unreliable, so RIR is capped here:
+// anything easier than RPE 7 is credited as RPE 7 (3 RIR), never more.
+const MAX_TRUSTED_RIR = 3;
+
+// Estimated 1RM for a single set. With an RPE logged, uses RPE-adjusted
+// Epley (accounts for reps left in the tank, capped at MAX_TRUSTED_RIR so
+// a lower RPE never yields a lower estimate); without one, plain Epley.
 export function calculateE1RM(weight, reps, rpe) {
   if (!weight || !reps) return null;
-  if (rpe != null && rpe >= 7) {
-    const rir = 10 - rpe;
-    return weight * (1 + (reps + rir) / 30);
-  }
-  return weight * (1 + reps / 30);
+  const rir = rpe != null ? Math.min(10 - rpe, MAX_TRUSTED_RIR) : 0;
+  return weight * (1 + (reps + rir) / 30);
 }
 
 // "3d ago" / "Today" / "Yesterday" from a plain "YYYY-MM-DD" date string.

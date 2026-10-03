@@ -16,8 +16,14 @@ describe("calculateE1RM", () => {
     expect(calculateE1RM(100, 5, null)).toBeCloseTo(116.667, 2);
   });
 
-  it("falls back to plain Epley when rpe is below 7", () => {
-    expect(calculateE1RM(100, 5, 6.5)).toBeCloseTo(116.667, 2);
+  it("caps RIR at 3 when rpe is below 7", () => {
+    // RPE 6.5 -> credited as RPE 7 (RIR 3) -> 100 * (1 + (5+3)/30)
+    expect(calculateE1RM(100, 5, 6.5)).toBeCloseTo(126.667, 2);
+  });
+
+  it("never gives a heavier, easier set a lower e1RM", () => {
+    // 120x5 @ RPE 6 vs 115x5 @ RPE 7
+    expect(calculateE1RM(120, 5, 6)).toBeGreaterThan(calculateE1RM(115, 5, 7));
   });
 
   it("uses RPE-adjusted Epley when rpe >= 7", () => {
